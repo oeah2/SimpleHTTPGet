@@ -47,9 +47,6 @@ enum {
 
 static char const*const error_msg = "Error in SimpleHTTPGet library";
 
-static size_t http_find_header_length(char const*const http_response);
-static size_t http_find_resp_length(char const*const http_response);
-
 static void myperror(size_t line, char const*const msg) {
 	if(msg) {
 		size_t buff_len = strlen(error_msg) + strlen(msg) + 30;
