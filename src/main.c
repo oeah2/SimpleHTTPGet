@@ -9,7 +9,7 @@
 
 int main(void) {
 	puts("Start of SimpleHTTPGet Test: \n");
-	char const* host = "www.google.de";
+	char const* host = "www.google.com";
 	char const* file = "/";
 	char const* add_info = 0;
 	
