@@ -1,6 +1,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 #include "socket.h"
 
@@ -14,6 +15,7 @@ int main(void) {
 	assert(http_response);
 	size_t resp_len = strlen(http_response);
 	printf("HTTP Response length: %zu\n", resp_len);
+	free(http_response);
 	
 	puts("\n\nEnd of SimpleHTTPGet Test!\n\n");
 	return 0;
