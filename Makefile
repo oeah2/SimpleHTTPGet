@@ -1,5 +1,5 @@
-OUT_RELEASE	= ./bin/Release/SimpleHTTPGet.exe
-OUT_RELEASE_LINUX = ./bin/Release/Prayer_times.a
+OUT_RELEASE	= ./bin/static/libSimpleHTTPGet.a
+OUT_RELEASE_LINUX = ./bin/static/libSimpleHTTPGet.a
 OUT_DEBUG = ./bin/Debug/SimpleHTTPGet.exe
 OUT_DEBUG_LINUX = ./bin/Debug/Prayer_Times.a
 OBJ_DEBUG_PATH = ./obj/Debug
@@ -9,25 +9,22 @@ CFLAGS_DEBUG = -Wall -std=c11 -g -O0
 #CFLAGS_DEBUG += -fsanitize=address
 CFLAGS_RELEASE = -Wall -std=c11 -O3 
 
-all: DebugLinux
-
-release: Release
-
 $(OUT_RELEASE): Release
 
-$(OUT_DEBUG): Debug
-
-Release: $(OBJ_RELEASE_PATH)/socket.o $(OBJ_RELEASE_PATH)/test.o 
-	gcc $(CFLAGS_RELEASE) -o $(OUT_RELEASE) $(OBJ_RELEASE_PATH)/test.o  -mwindows -lws2_32 -lssl -lcrypto
+Release: $(OBJ_RELEASE_PATH)/socket.o
+	ar rcs $(OUT_RELEASE) $(OBJ_RELEASE_PATH)/socket.o
 	
-ReleaseLinux: $(OBJ_RELEASE_PATH)/socket.o $(OBJ_RELEASE_PATH)/test.o 
-	gcc $(CFLAGS_RELEASE) -o $(OUT_RELEASE_LINUX) $(OBJ_RELEASE_PATH)/socket.o $(OBJ_RELEASE_PATH)/test.o  -lssl -lcrypto
+TestRelease: $(OUT_RELEASE)
+	gcc $(CFLAGS_RELEASE) -o ./bin/Release/Main.exe $(SRC_PATH)/main.c -Lbin/static -l:libSimpleHTTPGet.a -lws2_32 -lssl -lcrypto
+	
+ReleaseLinux: $(OBJ_RELEASE_PATH)/socket.o 
+	ar rcs $(OUT_RELEASE_LINUX) $(OBJ_RELEASE_PATH)/socket.o
  
 Debug:
 	gcc $(CFLAGS_DEBUG) -o $(OUT_DEBUG) $(SRC_PATH)/test.c -lws2_32 -lssl -lcrypto
 
 DebugLinux: $(OBJ_DEBUG_PATH)/socket.o $(OBJ_DEBUG_PATH)/test.o 
-	gcc $(CFLAGS_DEBUG) -o $(OUT_DEBUG_LINUX) $(OBJ_DEBUG_PATH)/socket.o $(OBJ_DEBUG_PATH)/test.o  -lssl -lcrypto -static-libasan
+	gcc $(CFLAGS_DEBUG) -o $(OUT_DEBUG_LINUX) $(OBJ_DEBUG_PATH)/test.o  -lssl -lcrypto -static-libasan
 
 $(OBJ_DEBUG_PATH)/socket.o:
 	gcc $(CFLAGS_DEBUG) -c $(SRC_PATH)/socket.c -o $(OBJ_DEBUG_PATH)/socket.o
@@ -37,9 +34,6 @@ $(OBJ_DEBUG_PATH)/test.o:
 
 $(OBJ_RELEASE_PATH)/socket.o:
 	gcc $(CFLAGS_RELEASE) -c $(SRC_PATH)/socket.c -o $(OBJ_RELEASE_PATH)/socket.o
-	
-$(OBJ_RELEASE_PATH)/test.o:
-	gcc $(CFLAGS_RELEASE) -c $(SRC_PATH)/test.c -o $(OBJ_RELEASE_PATH)/test.o
 
 cleanDebug:
 	rm $(OUT_DEBUG) $(OBJ_DEBUG_PATH)/socket.o $(OBJ_DEBUG_PATH)/test.o
