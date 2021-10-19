@@ -1,6 +1,6 @@
 # SimpleHTTPGet Library
 
-This library provides an lightweight, cross-plattform basic interface to get HTTP content.
+This library provides an lightweight, cross-plattform basic interface to get HTTP and HTTPS content.
 
 All you have to do is call the library function http_get. The Library connects to the server, fetches the data and returns an pointer to the content.
 
