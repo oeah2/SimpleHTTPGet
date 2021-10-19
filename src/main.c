@@ -9,9 +9,9 @@
 
 int main(void) {
 	puts("Start of SimpleHTTPGet Test: \n");
-	char const* host = "www.google.com";
-	char const* file = "/";
-	char const* add_info = 0;
+	char const* host = "www.google.com"; /* @brief Host-Server */
+	char const* file = "/"; /* @brief Requested file */
+	char const* add_info = 0; /* @brief Additional information to be passed in the HTTP request */
 	
 	char* http_response = http_get(host, file, add_info);
 	if(http_response) {
