@@ -1,5 +1,5 @@
 /*
-   Desktop Prayer Times app
+   Simple HTTP Get Library
    Copyright (C) 2021 Ahmet Öztürk
 
   This program is free software: you can redistribute it and/or modify
