@@ -3,8 +3,8 @@
 
 int main(void) {
 	puts("\n\nStart of SimpleHTTPGet Test: \n\n");
-	char const* host = "10.223.7.203";
-	char const* file = "/mantisbt2/my_view_page.php";
+	char const* host = "www.google.com";
+	char const* file = "/";
 	char const* add_info = 0;
 	
 	char* http_response = http_get(host, file, add_info);

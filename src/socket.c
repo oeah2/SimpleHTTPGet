@@ -37,7 +37,6 @@
 #include <openssl/ssl.h>
 #include "socket.h"
 
-//#define DEBUG 1
 
 enum {
     SOCK_OK,
@@ -429,7 +428,10 @@ char* http_get(char const*const host, char const*const file, char const*const ad
     int s = 0;
     char* http_request = 0, *buffer = 0;
     if(host && file) {
-        socket_init();
+        if(socket_init() != SOCK_OK) {
+			myperror(__LINE__, "Error initializing socket");
+			return ret;
+		}
         s = socket_connect(host);
         http_request = http_create_request(host, file, add_info);
         if(!http_request) goto ERR_SOCKET;
@@ -444,7 +446,7 @@ char* http_get(char const*const host, char const*const file, char const*const ad
 			return ret;
 		}
 #endif
-        received_bytes = http_receiveall(s, buffer + received_bytes, buf_len, 0); // Todo: Set MSG_WAITALL?
+        received_bytes = http_receiveall(s, buffer + received_bytes, buf_len, 0);
 		if(!received_bytes || !http_is_response_ok(buffer) || !http_is_response_complete(buffer)) goto ERR_RECV;
         buffer = http_remove_header(buffer);
         assert(buffer);
