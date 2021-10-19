@@ -209,6 +209,12 @@ static bool http_is_response_ok(char const*const http_response)
 	return ret;
 }
 
+/** \brief Returns HTTP error code, if @p http_response is not valid
+ *
+ * \param http_response char const*const http response to be checked
+ * \return int HTTP/1.1 error code
+ *
+ */
 static int http_get_error_msg(char const*const http_response) {
 	int ret = 0;
 	if(http_response) {
