@@ -11,26 +11,25 @@ CFLAGS_RELEASE = -Wall -std=c11 -O3
 
 $(OUT_RELEASE): Release
 
+$(OUT_DEBUG): Debug
+
 Release: $(OBJ_RELEASE_PATH)/socket.o
 	ar rcs $(OUT_RELEASE) $(OBJ_RELEASE_PATH)/socket.o
 	
-TestRelease: $(OUT_RELEASE)
-	gcc $(CFLAGS_RELEASE) -o ./bin/Release/Main.exe $(SRC_PATH)/main.c -Lbin/static -l:libSimpleHTTPGet.a -lws2_32 -lssl -lcrypto
-	
 ReleaseLinux: $(OBJ_RELEASE_PATH)/socket.o 
 	ar rcs $(OUT_RELEASE_LINUX) $(OBJ_RELEASE_PATH)/socket.o
- 
+
+TestRelease: $(OUT_RELEASE)
+	gcc $(CFLAGS_RELEASE) -o ./bin/Release/Main.exe $(SRC_PATH)/main.c -Lbin/static -l:libSimpleHTTPGet.a -lws2_32 -lssl -lcrypto
+	 
 Debug:
 	gcc $(CFLAGS_DEBUG) -o $(OUT_DEBUG) $(SRC_PATH)/test.c -lws2_32 -lssl -lcrypto
 
-DebugLinux: $(OBJ_DEBUG_PATH)/socket.o $(OBJ_DEBUG_PATH)/test.o 
-	gcc $(CFLAGS_DEBUG) -o $(OUT_DEBUG_LINUX) $(OBJ_DEBUG_PATH)/test.o  -lssl -lcrypto -static-libasan
+DebugLinux: 
+	gcc $(CFLAGS_DEBUG) -o $(OUT_DEBUG_LINUX) $(SRC_PATH)/test.c -lssl -lcrypto -static-libasan
 
 $(OBJ_DEBUG_PATH)/socket.o:
 	gcc $(CFLAGS_DEBUG) -c $(SRC_PATH)/socket.c -o $(OBJ_DEBUG_PATH)/socket.o
-	
-$(OBJ_DEBUG_PATH)/test.o:
-	gcc $(CFLAGS_DEBUG) -c $(SRC_PATH)/test.c -o $(OBJ_DEBUG_PATH)/test.o
 
 $(OBJ_RELEASE_PATH)/socket.o:
 	gcc $(CFLAGS_RELEASE) -c $(SRC_PATH)/socket.c -o $(OBJ_RELEASE_PATH)/socket.o
@@ -40,12 +39,6 @@ cleanDebug:
 	
 cleanRelease:
 	rm $(OUT_RELEASE) $(OBJ_RELEASE_PATH)/socket.o $(OBJ_RELEASE_PATH)/test.o
-
-run: $(OUT_RELEASE)
-	$(OUT_RELEASE)
-	
-runLinux: $(OUT_RELEASE_LINUX)
-	$(OUT_RELEASE_LINUX)
 
 debug: $(OUT_DEBUG)
 	gdb $(OUT_DEBUG)
