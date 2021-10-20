@@ -22,7 +22,7 @@
 struct HttpData {
 	int http_code;
 	size_t received_data_length;
-	char* return_value;
+	char* data;
 };
 
 /** \brief A very simple http request is being made and the result returned. The returned string needs to be freed by the user
