@@ -19,6 +19,12 @@
 #include <stdbool.h>
 #include <errno.h>
 
+struct HttpData {
+	int http_code;
+	size_t received_data_length;
+	char* return_value;
+};
+
 /** \brief A very simple http request is being made and the result returned. The returned string needs to be freed by the user
  * \details This function initializes the socket interface, connects to @p host, requests @p file and adds @p add_info into the request header.
     The returned message is being checked for validity. If valid, the http header is removed and the http body returned.
