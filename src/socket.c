@@ -290,16 +290,14 @@ static char* socket_get_useragent(char const*const user_agent)
 static bool http_is_response_complete(char const*const http_response)
 {
     bool ret = false;
-    if(http_response) {
-    	if(http_is_response_ok(http_response)) {
-			size_t header_length = http_find_header_length(http_response);
-			size_t resp_setpoint = http_find_content_length(http_response);
-			int actual_resp = strlen(http_response) - header_length;
-			if(actual_resp > 0 && header_length && resp_setpoint && actual_resp == resp_setpoint) { // Todo tbe last comparison should be == instead of >=
-				ret = true;
-			}
-        }
-    }
+	if(http_is_response_ok(http_response)) {
+		size_t header_length = http_find_header_length(http_response);
+		size_t resp_setpoint = http_find_content_length(http_response);
+		int actual_resp = strlen(http_response) - header_length;
+		if(actual_resp > 0 && header_length && resp_setpoint && actual_resp == resp_setpoint) {
+			ret = true;
+		}
+	}
     return ret;
 }
 
@@ -313,22 +311,21 @@ static bool http_is_response_complete(char const*const http_response)
  */
 static char* http_create_request(char const*const host, char const*const file, char const*const add_info)
 {
-    if(!host || !file) {
-        return 0;
-    }
-
-    size_t const header_max = 2000;
-    char* request = calloc(header_max, sizeof(char));
-    //char const*const close = "close";
-    char const*const keep = "keep-alive";
-    char const*const method = keep;
-    if(request) {
-        sprintf(request, "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: %s\r\nAccept: text/plain\r\n%s\r\n\r\n", file, host, method, add_info ? add_info : "");
-        char* new_req = realloc(request, strlen(request) + 1);
-        if(new_req) {
-            request = new_req;
-        }
-    }
+	char* request = 0;
+    if(host && file) {
+		size_t const header_max = 2000;
+		request = calloc(header_max, sizeof(char));
+		//char const*const close = "close";
+		char const*const keep = "keep-alive";
+		char const*const method = keep;
+		if(request) {
+			sprintf(request, "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: %s\r\nAccept: text/plain\r\n%s\r\n\r\n", file, host, method, add_info ? add_info : "");
+			char* new_req = realloc(request, strlen(request) + 1);
+			if(new_req) {
+				request = new_req;
+			}
+		}
+	}
     return request;
 
 }
@@ -341,14 +338,13 @@ static char* http_create_request(char const*const host, char const*const file, c
  */
 static char* http_remove_header(char* http_response)
 {
-    if(http_response) {
+    if(http_is_response_ok(http_response)) {
         if(strstr(http_response, "\r\n\r\n")) {
             size_t length = strlen(http_response);
-            char* header_end = strstr(http_response, "\r\n\r\n") + strlen("\r\n\r\n"); // ToDo: header_end kann nie 0 werden, weil strlen immer 4 ist.
-            ptrdiff_t header_length = header_end - http_response;
+            size_t header_length = http_find_header_length(http_response);
             assert(header_length > 0);
             char buffer[length - header_length + 1];
-            strcpy(buffer, header_end);
+            strcpy(buffer, http_response + header_length);
             http_response = realloc(http_response, length - header_length + 1);
             if(http_response) {
                 strcpy(http_response, buffer);
@@ -388,14 +384,10 @@ static struct HttpData http_receiveall(int sock_id, char* msg, size_t max_len, i
 				default:
 					goto ERR_RECV;
 			}
-				/*
-			if(err_ret != WSAEWOULDBLOCK) {
-				goto ERR_RECV;
-			} // else do nothing
-			*/
 #else
-			// Todo solve for linux
-			goto ERR_RECV; // Linux implementation is blocking, therefore received == -1 is an error
+			err_ret = errno;
+			// Todo implement for linux
+			goto ERR_RECV; 
 #endif
         }
 		if(received > 0) buff_pos += received;
@@ -455,12 +447,10 @@ struct HttpData http_get(char const*const host, char const*const file, char cons
         buffer = calloc(buf_len, sizeof(char));
         if(!buffer) goto ERR_SEND;
 		size_t received_bytes = 0;
-#ifdef _WIN32
 		if(!socket_set_blocking(s, false)) {
 			myperror(__LINE__, "Error setting socket to nonblocking");
 			return ret;
 		}
-#endif
         ret = http_receiveall(s, buffer + received_bytes, buf_len, 0);
 		if(ret.http_code != 200 || !ret.received_bytes || !http_is_response_complete(buffer)) goto ERR_RECV;
         buffer = http_remove_header(buffer);
