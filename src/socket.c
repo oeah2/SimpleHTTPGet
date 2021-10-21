@@ -404,7 +404,7 @@ static struct HttpData http_receiveall(int sock_id, char* msg, size_t max_len, i
     } while(true);
 	
 	ret.received_bytes = buff_pos;
-	ret.received_data_length = buff_pos - strlen(msg) - http_find_header_length(msg);
+	ret.received_data_length = buff_pos - http_find_header_length(msg);
 	ret.content_length = http_find_content_length(msg);
 
     return ret;
