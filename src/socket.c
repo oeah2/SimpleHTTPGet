@@ -192,6 +192,23 @@ static int socket_receive(int sock_id, char* msg, size_t max_len, int flags)
     return recv(sock_id, msg, max_len, flags);
 }
 
+/** \brief Returns HTTP code
+ *
+ * \param http_response char const*const http response to be checked
+ * \return int HTTP/1.1 code
+ *
+ */
+static int http_get_http_code(char const*const http_response) {
+	int ret = 0;
+	if(http_response) {
+		char* header_pos  = strstr(http_response, "HTTP/1.1");
+		if(header_pos) {
+			ret = strtoul(header_pos + strlen("HTTP/1.1"), NULL, 10);
+		}
+	}
+	return ret;
+}
+
 /** \brief Checks http response for validity ("200 OK")
  *
  * \param http_response char const*const http response to be checked
@@ -200,33 +217,7 @@ static int socket_receive(int sock_id, char* msg, size_t max_len, int flags)
  */
 static bool http_is_response_ok(char const*const http_response)
 {
-	bool ret = false;
-	if(http_response) {
-		if(strstr(http_response, "HTTP/1.1 200 OK")) {
-			ret = true;
-		}
-	}
-	return ret;
-}
-
-/** \brief Returns HTTP error code, if @p http_response is not valid
- *
- * \param http_response char const*const http response to be checked
- * \return int HTTP/1.1 error code
- *
- */
-static int http_get_error_msg(char const*const http_response) {
-	int ret = 0;
-	if(http_response) {
-		if(!http_is_response_ok(http_response)) {
-			char* header_pos  = strstr(http_response, "HTTP/1.1");
-			if(header_pos) {
-				ret = strtoul(header_pos + strlen("HTTP/1.1"), NULL, 10);
-			}
-		} else
-			ret = 200;
-	}
-	return ret;
+	return http_get_http_code(http_response) == 200;
 }
 
 /** \brief Returns the content length of the http response according to the http header
@@ -257,7 +248,7 @@ static size_t http_find_content_length(char const*const http_response)
 static size_t http_find_header_length(char const*const http_response)
 {
     size_t ret = 0;
-    if(http_is_response_ok(http_response)) {
+    if(http_response) {
         char* pos_header_end = strstr(http_response, "\r\n\r\n") + strlen("\r\n\r\n");   // find end of header, -1 necessary?
         if(pos_header_end) {
             ptrdiff_t length = pos_header_end - http_response;
@@ -388,9 +379,20 @@ static struct HttpData http_receiveall(int sock_id, char* msg, size_t max_len, i
         if(received == -1) {
 #ifdef _WIN32
         	err_ret = WSAGetLastError();
+			switch(err_ret) {
+				case WSAEWOULDBLOCK:
+				case WSAEINPROGRESS:
+				case WSAEALREADY:
+					break;
+					
+				default:
+					goto ERR_RECV;
+			}
+				/*
 			if(err_ret != WSAEWOULDBLOCK) {
 				goto ERR_RECV;
 			} // else do nothing
+			*/
 #else
 			// Todo solve for linux
 			goto ERR_RECV; // Linux implementation is blocking, therefore received == -1 is an error
@@ -404,7 +406,7 @@ static struct HttpData http_receiveall(int sock_id, char* msg, size_t max_len, i
         	}
         }
         if(buff_pos && !http_is_response_ok(msg)) {
-			ret.http_code = http_get_error_msg(msg);
+			ret.http_code = http_get_http_code(msg);
 			goto ERR_RECV;
 		}			
     } while(true);

@@ -1,7 +1,7 @@
 OUT_RELEASE	= ./bin/static/libSimpleHTTPGet.a
 OUT_RELEASE_LINUX = ./bin/static/libSimpleHTTPGet.a
 OUT_DEBUG = ./bin/Debug/SimpleHTTPGet.exe
-OUT_DEBUG_LINUX = ./bin/Debug/Prayer_Times.a
+OUT_DEBUG_LINUX = ./bin/Debug/SimpleHTTPGet.a
 OBJ_DEBUG_PATH = ./obj/Debug
 OBJ_RELEASE_PATH = ./obj/Release
 SRC_PATH = ./src
@@ -13,7 +13,10 @@ $(OUT_RELEASE): Release
 
 $(OUT_DEBUG): Debug
 
-Release: $(OBJ_RELEASE_PATH)/socket.o
+$(OUT_DEBUG_LINUX): DebugLinux
+
+Release:
+	gcc $(CFLAGS_RELEASE) -c $(SRC_PATH)/socket.c -o $(OBJ_RELEASE_PATH)/socket.o
 	ar rcs $(OUT_RELEASE) $(OBJ_RELEASE_PATH)/socket.o
 	
 ReleaseLinux: $(OBJ_RELEASE_PATH)/socket.o 
