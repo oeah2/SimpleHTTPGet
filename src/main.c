@@ -13,12 +13,12 @@ int main(void) {
 	char const* file = "/"; 				/* Requested file */
 	char const* add_info = 0; 				/* Additional information to be passed in the HTTP request */
 	
-	char* http_response = http_get(host, file, add_info);
-	if(http_response) {
+	struct HttpData http_response = http_get(host, file, add_info);
+	if(http_response.data) {
 		puts("HTTP get success!");
-		size_t response_length = strlen(http_response);
-		printf("HTTP Response length: %zu\n", response_length);
-		free(http_response);
+		size_t response_length = strlen(http_response.data);
+		printf("HTTP Response length: %zu\t HTTP Received data bytes: %zu\t Received bytes: %zu\n", http_response.content_length, response_length, http_response.received_bytes);
+		free(http_response.data);
 	} else
 		puts("Error during http_get.");
 	return 0;

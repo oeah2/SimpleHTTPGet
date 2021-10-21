@@ -21,7 +21,9 @@
 
 struct HttpData {
 	int http_code;
+	size_t received_bytes;
 	size_t received_data_length;
+	size_t content_length;
 	char* data;
 };
 
@@ -35,7 +37,7 @@ struct HttpData {
  * \return char*
  *
  */
-char* http_get(char const*const host, char const*const file, char const*const add_info);
+struct HttpData http_get(char const*const host, char const*const file, char const*const add_info);
 
 /** \brief Checks the internet availability
  *  \details A HTTP request is sent to google and the reponse is checked for validity.
