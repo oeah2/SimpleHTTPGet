@@ -232,8 +232,10 @@ static size_t http_find_content_length(char const*const http_response)
     if(http_is_response_ok(http_response)) {            // response valid
         if(strstr(http_response, "\r\n\r\n")) {         // header complete
             char* pos_length = strstr(http_response, "Content-Length: ");
-            int scan = sscanf(pos_length, "Content-Length: %zu", &ret);
-            assert(scan);
+            if(pos_length) {
+				int scan = sscanf(pos_length, "Content-Length: %zu", &ret);
+				assert(scan);
+            }
         }
     }
     return ret;
@@ -386,8 +388,16 @@ static struct HttpData http_receiveall(int sock_id, char* msg, size_t max_len, i
 			}
 #else
 			err_ret = errno;
-			// Todo implement for linux
-			goto ERR_RECV; 
+			switch(err_ret) {
+			case EAGAIN:
+				break;
+
+			case ECONNRESET:
+				goto END;
+
+			default:
+				goto ERR_RECV;
+			}
 #endif
         }
 		if(received > 0) buff_pos += received;
@@ -402,7 +412,8 @@ static struct HttpData http_receiveall(int sock_id, char* msg, size_t max_len, i
 			goto ERR_RECV;
 		}			
     } while(true);
-	
+
+END:
 	ret.received_bytes = buff_pos;
 	ret.received_data_length = buff_pos - http_find_header_length(msg);
 	ret.content_length = http_find_content_length(msg);
