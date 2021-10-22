@@ -241,6 +241,16 @@ static size_t http_find_content_length(char const*const http_response)
     return ret;
 }
 
+/** \brief Returns whether the http reponse header has content length information
+ *
+ * \param http_response char const*const http response of the server
+ * \return bool
+ *
+ */
+static bool http_has_content_information(char const*const http_response) {
+	return http_response && strstr(http_response, "Content-Length: ");
+}
+
 /** \brief Return the length of the http header
  *
  * \param http_response char const*const http response of the server
@@ -356,6 +366,26 @@ static char* http_remove_header(char* http_response)
     return http_response;
 }
 
+static char* http_get_error_msg(char* http_response) {
+	char* ret = 0;
+	if(http_response) {
+		char* new_location = strstr(http_response, "Location: ");
+		if(new_location) {
+			new_location += strlen("Location: ");
+			char* end_location = strstr(new_location, "\r\n");
+			assert(end_location);
+			size_t buff_len = end_location - new_location + 1;
+			char buffer[buff_len];
+			strncpy(buffer, new_location, buff_len - 1);
+			buffer[buff_len] = '\0';
+			http_response = realloc(http_response, buff_len * sizeof(char));
+			strcpy(http_response, buffer);
+			ret = http_response;
+		}
+	}
+	return ret;
+}
+
 /** \brief Receive whole message from host
  *
  * \param sock_id int id of socket
@@ -393,7 +423,7 @@ static struct HttpData http_receiveall(int sock_id, char* msg, size_t max_len, i
 				break;
 
 			case ECONNRESET:
-				goto END;
+				goto END; // or goto ERR_RECV?
 
 			default:
 				goto ERR_RECV;
@@ -403,12 +433,14 @@ static struct HttpData http_receiveall(int sock_id, char* msg, size_t max_len, i
 		if(received > 0) buff_pos += received;
         if(http_is_response_ok(msg)) {
 			ret.http_code = 200;
-        	if(http_is_response_complete(msg) || received == 0) {
+        	if(received == 0 || http_is_response_complete(msg)) {
         		break;
         	}
         }
         if(buff_pos && !http_is_response_ok(msg)) {
 			ret.http_code = http_get_http_code(msg);
+			ret.received_bytes = buff_pos;
+			ret.data = http_get_error_msg(msg);
 			goto ERR_RECV;
 		}			
     } while(true);
@@ -422,9 +454,9 @@ END:
 
 ERR_RECV:
 #ifdef _WIN32
-    ret.http_code = err_ret;
+    if(!ret.http_code) ret.http_code = err_ret;
 #else
-    ret.http_code = errno;
+    if(!ret.http_code) ret.http_code = errno;
 #endif // _WIN32
 	char buffer[40];
 	sprintf(buffer, "Error during recv, error msg: %d", ret.http_code);	
@@ -463,11 +495,20 @@ struct HttpData http_get(char const*const host, char const*const file, char cons
 			return ret;
 		}
         ret = http_receiveall(s, buffer + received_bytes, buf_len, 0);
-		if(ret.http_code != 200 || !ret.received_bytes || !http_is_response_complete(buffer)) goto ERR_RECV;
-        buffer = http_remove_header(buffer);
-        assert(buffer);
-        ret.data = buffer;
-			
+		if(!ret.received_bytes) 
+			goto ERR_RECV;
+		if(ret.http_code == 200) {
+			if(!http_has_content_information(buffer) || http_is_response_complete(buffer)) {
+				// Either no content length information or fully received
+				buffer = http_remove_header(buffer);
+				assert(buffer);
+				ret.data = buffer;
+			} else {
+				goto ERR_RECV; // Could not receive fully
+			}
+		} else if(ret.http_code && ret.http_code != 200) {
+			ret.data = buffer;
+		}
 
         socket_close(s);
         free(http_request);
@@ -477,7 +518,8 @@ struct HttpData http_get(char const*const host, char const*const file, char cons
 
 ERR_RECV:
 	myperror(__LINE__, "Error during receive");
-    free(buffer);
+    free(ret.data);
+	ret.data = 0;
 ERR_SEND:
     free(http_request);
 ERR_SOCKET:
