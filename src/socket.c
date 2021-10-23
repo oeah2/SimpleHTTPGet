@@ -433,7 +433,7 @@ static struct HttpData http_receiveall(int sock_id, char* msg, size_t max_len, i
 		if(received > 0) buff_pos += received;
         if(http_is_response_ok(msg)) {
 			ret.http_code = 200;
-        	if(received == 0 || http_is_response_complete(msg)) {
+        	if(http_is_response_complete(msg) || received == 0) {
         		break;
         	}
         }
