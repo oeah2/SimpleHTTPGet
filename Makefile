@@ -1,7 +1,7 @@
 OUT_RELEASE	= ./bin/static/libSimpleHTTPGet.a
 OUT_RELEASE_LINUX = ./bin/static/libSimpleHTTPGet.a
 OUT_DEBUG = ./bin/Debug/SimpleHTTPGet.exe
-OUT_DEBUG_LINUX = ./bin/Debug/SimpleHTTPGet.a
+OUT_DEBUG_LINUX = ./bin/Debug/SimpleHTTPGet
 OBJ_DEBUG_PATH = ./obj/Debug
 OBJ_RELEASE_PATH = ./obj/Release
 SRC_PATH = ./src
