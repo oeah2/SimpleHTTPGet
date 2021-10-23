@@ -17,7 +17,7 @@ void get_and_print(char const*const host, char const*const file, char const*cons
 int main(void) {
 	puts("Start of SimpleHTTPGet Test: \n");
 	
-	get_and_print("www.google.com", "/", 0);
+	get_and_print("www.columbia.edu", "/~fdc/sample.html", 0);
 	get_and_print("www.gogle.com", "/", 0);
 
 	return 0;
