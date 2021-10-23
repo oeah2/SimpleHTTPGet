@@ -47,17 +47,17 @@ enum {
 #ifdef DIAGNOSTIC
 static char const*const error_msg = "Error in SimpleHTTPGet library";
 
-static void myperror(size_t line, char const*const msg) {
+static void myperror(size_t line, char const*const msg, int error) {
 	if(msg) {
-		size_t buff_len = strlen(error_msg) + strlen(msg) + 30;
+		size_t buff_len = strlen(error_msg) + strlen(msg) + 50;
 		char buffer[buff_len];
 		
-		sprintf(buffer, "%s, line: %zu: %s\n", error_msg, line, msg);
+		sprintf(buffer, "%s\t errno: %d, line: %zu: %s\n", error_msg, errno, line, msg);
 		perror(buffer);
 	}
 }
 #else
-static void myperror(size_t line, char const*const msg) {
+static void myperror(size_t line, char const*const msg, int error) {
 	return;
 }
 #endif
@@ -71,7 +71,7 @@ static int socket_init(void)
     WSADATA wsaData;
 
     if(WSAStartup(MAKEWORD(1,1), &wsaData)) {
-    	myperror(__LINE__, "Error during Socket initialization.");
+    	myperror(__LINE__, "Error during Socket initialization.", 0);
         return SOCK_ERR_INIT;
     }
 #endif
@@ -88,6 +88,16 @@ static int socket_deinit(void)
 #else
     return 0;
 #endif
+}
+
+static int get_last_error(void) {
+	int ret = 0;
+#ifdef _WIN32
+	ret = WSAGetLastError();
+#else
+	ret = errno;
+#endif
+	return ret;
 }
 
 /** \brief Closes Socket
@@ -141,13 +151,23 @@ static int socket_connect(char const*const addr)
     hints.ai_socktype = SOCK_STREAM;
 
     if(getaddrinfo(addr, "http", &hints, &res)) {
-    	myperror(__LINE__, "Error getting addrinfo.");
-        return SOCK_ERR_ADDRINFO;
+    	int error = get_last_error();
+    	myperror(__LINE__, "Error getting addrinfo.", error);
+        return -1;
     }
 
     int s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+    if(s == -1) {
+    	int error = get_last_error();
+    	myperror(__LINE__, "Error creating socket.", error);
+    	return -1;
+    }
 
-    connect(s, res->ai_addr, res->ai_addrlen);
+    if(connect(s, res->ai_addr, res->ai_addrlen) == -1) {
+    	int error = get_last_error();
+    	myperror(__LINE__, "Error connecting to socket.", error);
+    	return -1;
+    }
     freeaddrinfo(res);
     return s;
 }
@@ -411,8 +431,8 @@ static struct HttpData http_receiveall(int sock_id, char* msg, size_t max_len, i
     do {
         received = socket_receive(sock_id, msg + buff_pos, max_len - buff_pos, flags);
         if(received == -1) {
+        	err_ret = get_last_error();
 #ifdef _WIN32
-        	err_ret = WSAGetLastError();
 			switch(err_ret) {
 				case WSAEWOULDBLOCK:
 				case WSAEINPROGRESS:
@@ -423,7 +443,6 @@ static struct HttpData http_receiveall(int sock_id, char* msg, size_t max_len, i
 					goto ERR_RECV;
 			}
 #else
-			err_ret = errno;
 			switch(err_ret) {
 			case EAGAIN:
 				break;
@@ -466,7 +485,8 @@ ERR_RECV:
 #endif // _WIN32
 	char buffer[40];
 	sprintf(buffer, "Error during recv, error msg: %d", ret.http_code);	
-	myperror(__LINE__, buffer);
+	int error = get_last_error();
+	myperror(__LINE__, buffer, error);
     return ret;
 }
 
@@ -485,7 +505,8 @@ struct HttpData http_get(char const*const host, char const*const file, char cons
     char* http_request = 0, *buffer = 0;
     if(host && file) {
         if(socket_init() != SOCK_OK) {
-			myperror(__LINE__, "Error initializing socket");
+        	int error = get_last_error();
+			myperror(__LINE__, "Error initializing socket", error);
 			return ret;
 		}
         s = socket_connect(host);
@@ -497,7 +518,8 @@ struct HttpData http_get(char const*const host, char const*const file, char cons
         if(!buffer) goto ERR_SEND;
 		size_t received_bytes = 0;
 		if(!socket_set_blocking(s, false)) {
-			myperror(__LINE__, "Error setting socket to nonblocking");
+	    	int error = get_last_error();
+			myperror(__LINE__, "Error setting socket to nonblocking", error);
 			return ret;
 		}
         ret = http_receiveall(s, buffer + received_bytes, buf_len, 0);
@@ -523,7 +545,9 @@ struct HttpData http_get(char const*const host, char const*const file, char cons
     return ret;
 
 ERR_RECV:
-	myperror(__LINE__, "Error during receive");
+	(void) ret;
+	int error = get_last_error();
+	myperror(__LINE__, "Error during receive", error);
     free(ret.data);
 	ret.data = 0;
 ERR_SEND:
@@ -548,7 +572,8 @@ bool socket_check_connection()      // Das ist keine schoene Loesung, sollte abe
  */
 static void report_and_exit(const char* msg)
 {
-	myperror(__LINE__, msg);
+	int error = get_last_error();
+	myperror(__LINE__, msg, error);
     ERR_print_errors_fp(stderr);
     exit(-1);
 }
@@ -661,7 +686,8 @@ char* https_get(char const*const host, char const*const file, char const*const a
     char* http_request = http_create_request(host, file, add_info);
     int sent_bytes = BIO_puts(bio, http_request);
     if(sent_bytes == -1 || sent_bytes == 0) {
-    	myperror(__LINE__, "Error while sending data over HTTPS socket!");
+    	int error = get_last_error();
+    	myperror(__LINE__, "Error while sending data over HTTPS socket!", error);
         return 0;
     }
     assert(strlen(http_request) == sent_bytes);
@@ -670,7 +696,8 @@ char* https_get(char const*const host, char const*const file, char const*const a
 
     char* http_response = https_receive(bio);
 	if(!http_is_response_complete(http_response)) {
-		myperror(__LINE__, "Error during receiving of https_get");
+		int error = get_last_error();
+		myperror(__LINE__, "Error during receiving of https_get", error);
 	}
     https_cleanup(ctx, bio);
     if(http_is_response_ok(http_response)) {
