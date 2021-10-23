@@ -20,6 +20,12 @@ int main(void) {
 	printf("HTTP Response length: %zu\n", resp_len);
 	free(http_response);
 	
+	http_response = https_get("www.google.com", "/", 0);
+	assert(http_response);
+	resp_len = strlen(http_response);
+	printf("HTTPS Response length: %zu\n", resp_len);
+	free(http_response);
+
 	puts("\n\nEnd of SimpleHTTPGet Test!\n\n");
 	return 0;
 }
