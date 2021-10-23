@@ -44,6 +44,7 @@ enum {
     SOCK_ERR_ADDRINFO,
 };
 
+#ifdef DIAGNOSTIC
 static char const*const error_msg = "Error in SimpleHTTPGet library";
 
 static void myperror(size_t line, char const*const msg) {
@@ -55,6 +56,11 @@ static void myperror(size_t line, char const*const msg) {
 		perror(buffer);
 	}
 }
+#else
+static void myperror(size_t line, char const*const msg) {
+	return;
+}
+#endif
 
 /** \brief Initialize socket
  *

@@ -5,7 +5,7 @@ OUT_DEBUG_LINUX = ./bin/Debug/SimpleHTTPGet
 OBJ_DEBUG_PATH = ./obj/Debug
 OBJ_RELEASE_PATH = ./obj/Release
 SRC_PATH = ./src
-CFLAGS_DEBUG = -Wall -std=c11 -g -O0
+CFLAGS_DEBUG = -Wall -std=c11 -g -O0 -D DIAGNOSTIC
 #CFLAGS_DEBUG += -fsanitize=address
 CFLAGS_RELEASE = -Wall -std=c11 -O3 
 
@@ -24,6 +24,9 @@ ReleaseLinux: $(OBJ_RELEASE_PATH)/socket.o
 
 TestRelease: $(OUT_RELEASE)
 	gcc $(CFLAGS_RELEASE) -o ./bin/Release/Main.exe $(SRC_PATH)/main.c -Lbin/static -l:libSimpleHTTPGet.a -lws2_32 -lssl -lcrypto
+
+TestReleaseLinux: $(OUT_RELEASE_LINUX)
+	gcc $(CFLAGS_RELEASE) -o ./bin/Release/Main $(SRC_PATH)/main.c -Lbin/static -l:libSimpleHTTPGet.a -lssl -lcrypto
 	 
 Debug:
 	gcc $(CFLAGS_DEBUG) -o $(OUT_DEBUG) $(SRC_PATH)/test.c -lws2_32 -lssl -lcrypto
