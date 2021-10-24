@@ -353,9 +353,9 @@ static char* http_create_request(char const*const host, char const*const file, c
     if(host && file) {
 		size_t const header_max = 2000;
 		request = calloc(header_max, sizeof(char));
-		//char const*const close = "close";
-		char const*const keep = "keep-alive";
-		char const*const method = keep;
+		char const*const close = "close";
+		//char const*const keep = "keep-alive";
+		char const*const method = close;
 		if(request) {
 			sprintf(request, "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: %s\r\nAccept: text/plain\r\n%s\r\n\r\n", file, host, method, add_info ? add_info : "");
 			char* new_req = realloc(request, strlen(request) + 1);
@@ -696,8 +696,10 @@ char* https_get(char const*const host, char const*const file, char const*const a
 
     char* http_response = https_receive(bio);
 	if(!http_is_response_complete(http_response)) {
-		int error = get_last_error();
-		myperror(__LINE__, "Error during receiving of https_get", error);
+		if(!http_is_response_ok(http_response) || http_has_content_information(http_response)) {
+			int error = get_last_error();
+			myperror(__LINE__, "Error during receiving of https_get", error);
+		}
 	}
     https_cleanup(ctx, bio);
     if(http_is_response_ok(http_response)) {
