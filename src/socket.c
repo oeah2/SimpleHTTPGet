@@ -1,6 +1,7 @@
 /*
    Simple HTTP Get Library
    Copyright (C) 2021 Ahmet Öztürk
+   Version 0.1
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -401,12 +402,16 @@ static char* http_get_error_msg(char* http_response) {
 			char* end_location = strstr(new_location, "\r\n");
 			assert(end_location);
 			size_t buff_len = end_location - new_location + 1;
+			assert(buff_len);
 			char buffer[buff_len];
 			strncpy(buffer, new_location, buff_len - 1);
-			buffer[buff_len] = '\0';
-			http_response = realloc(http_response, buff_len * sizeof(char));
-			strcpy(http_response, buffer);
-			ret = http_response;
+			buffer[buff_len - 1] = '\0';
+			char* new_pos = realloc(http_response, buff_len * sizeof(char)); // Todo check
+			if(new_pos)
+				http_response = new_pos;
+			//strcpy(new_pos, buffer);
+			memcpy(new_pos, buffer, buff_len);
+			ret = new_pos;
 		}
 	}
 	return ret;
