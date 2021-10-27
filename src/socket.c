@@ -392,27 +392,34 @@ static char* http_remove_header(char* http_response)
     return http_response;
 }
 
-static char* http_get_error_msg(char* http_response) {
+static char* http_get_error_msg(int http_code, char* http_response) {
 	char* ret = 0;
-	if(http_response) {
-		char* new_location = strstr(http_response, "Location: ");
-		if(new_location) {
-			new_location += strlen("Location: ");
-			char* end_location = strstr(new_location, "\r\n");
-			assert(end_location);
-			size_t buff_len = end_location - new_location + 1;
-			assert(buff_len);
-			char buffer[buff_len];
-			strncpy(buffer, new_location, buff_len - 1);
-			buffer[buff_len - 1] = '\0';
-			char* new_pos = realloc(http_response, buff_len * sizeof(char)); // Todo check
-			if(new_pos)
-				http_response = new_pos;
-			//strcpy(new_pos, buffer);
-			memcpy(new_pos, buffer, buff_len);
-			ret = new_pos;
+	switch(http_code) {
+	case 301:
+		if(http_response) {
+			char* new_location = strstr(http_response, "Location: ");
+			if(new_location) {
+				new_location += strlen("Location: ");
+				char* end_location = strstr(new_location, "\r\n");
+				assert(end_location);
+				size_t buff_len = end_location - new_location + 1;
+				assert(buff_len);
+				char buffer[buff_len];
+				strncpy(buffer, new_location, buff_len - 1);
+				buffer[buff_len - 1] = '\0';
+				char* new_pos = realloc(http_response, buff_len * sizeof(char)); // Todo check
+				if(new_pos)
+					http_response = new_pos;
+				//strcpy(new_pos, buffer);
+				memcpy(new_pos, buffer, buff_len);
+				ret = new_pos;
+			}
 		}
+		break;
+	default:
+		// Nothing;
 	}
+
 	return ret;
 }
 
@@ -479,7 +486,7 @@ static struct HttpData http_receiveall(int sock_id, char* msg, size_t max_len, i
         if(buff_pos && !http_is_response_ok(msg)) {
 			ret.http_code = http_get_http_code(msg);
 			ret.received_bytes = buff_pos;
-			ret.data = http_get_error_msg(msg);
+			ret.data = http_get_error_msg(ret.http_code, msg);
 			goto ERR_RECV;
 		}			
     } while(true);
@@ -712,9 +719,10 @@ struct HttpData https_get(char const*const host, char const*const file, char con
 
     ret = https_receive(bio);
     if(ret.received_data_length != ret.content_length) {
-    	if(ret.http_code != 200 || !http_has_content_information(ret.data)) {
+    	if(ret.http_code != 200 || http_has_content_information(ret.data)) {
 			int error = get_last_error();
 			myperror(__LINE__, "Error during receiving of https_get", error);
+			ret.data = http_get_error_msg(ret.http_code, ret.data);
 		}
 	}
     https_cleanup(ctx, bio);
