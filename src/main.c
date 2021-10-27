@@ -49,5 +49,9 @@ int main(void) {
 	get_and_print("www.columbia.edu", "/~fdc/sample.html", 0, http_get);
 	get_and_print("www.gogle.com", "/", 0, http_get);
 
+
+	get_and_print("www.google.com", "/", 0, https_get);
+	get_and_print("www.gogle.com", "/", 0, https_get);
+
 	return 0;
 }

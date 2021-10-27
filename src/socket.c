@@ -366,7 +366,6 @@ static char* http_create_request(char const*const host, char const*const file, c
 		}
 	}
     return request;
-
 }
 
 /** \brief removes http header from http response
@@ -417,6 +416,17 @@ static char* http_get_error_msg(char* http_response) {
 	return ret;
 }
 
+struct HttpData http_parse_header(char const*const data, size_t received_bytes) {
+	struct HttpData ret = {0};
+	if(data && received_bytes) {
+		ret.http_code = http_get_http_code(data);
+		ret.received_bytes = received_bytes;
+		ret.received_data_length = received_bytes - http_find_header_length(data);
+		ret.content_length = http_find_content_length(data);
+	}
+	return ret;
+}
+
 /** \brief Receive whole message from host
  *
  * \param sock_id int id of socket
@@ -462,7 +472,6 @@ static struct HttpData http_receiveall(int sock_id, char* msg, size_t max_len, i
         }
 		if(received > 0) buff_pos += received;
         if(http_is_response_ok(msg)) {
-			ret.http_code = 200;
         	if(http_is_response_complete(msg) || received == 0) {
         		break;
         	}
@@ -476,9 +485,7 @@ static struct HttpData http_receiveall(int sock_id, char* msg, size_t max_len, i
     } while(true);
 
 END:
-	ret.received_bytes = buff_pos;
-	ret.received_data_length = buff_pos - http_find_header_length(msg);
-	ret.content_length = http_find_content_length(msg);
+	ret = http_parse_header(msg, buff_pos);
 
     return ret;
 
@@ -669,7 +676,7 @@ static BIO* https_connect(const char* hostname, SSL_CTX** ctx_in)
  * \return char*
  *
  */
-static char* https_receive(BIO* bio)
+static struct HttpData https_receive(BIO* bio)
 {
     size_t resp_len = 1E6, recv_len = 0;
     char* response = calloc(resp_len, sizeof(char));
@@ -679,12 +686,16 @@ static char* https_receive(BIO* bio)
         if (n <= 0) break; /* 0 is end-of-stream, < 0 is an error */
         recv_len += n;
     }
-    response = realloc(response, strlen(response) + 10);
-    return response;
+    response = realloc(response, strlen(response) + 1);
+
+    struct HttpData ret = http_parse_header(response, recv_len);
+    ret.data = response;
+    return ret;
 }
 
-char* https_get(char const*const host, char const*const file, char const*const add_info)
+struct HttpData https_get(char const*const host, char const*const file, char const*const add_info)
 {
+	struct HttpData ret = {0};
     https_init();
     SSL_CTX* ctx = NULL;
     BIO* bio = https_connect(host, &ctx);
@@ -693,32 +704,29 @@ char* https_get(char const*const host, char const*const file, char const*const a
     if(sent_bytes == -1 || sent_bytes == 0) {
     	int error = get_last_error();
     	myperror(__LINE__, "Error while sending data over HTTPS socket!", error);
-        return 0;
+        return ret;
     }
     assert(strlen(http_request) == sent_bytes);
     free(http_request);
     http_request = NULL;
 
-    char* http_response = https_receive(bio);
-	if(!http_is_response_complete(http_response)) {
-		if(!http_is_response_ok(http_response) || http_has_content_information(http_response)) {
+    ret = https_receive(bio);
+    if(ret.received_data_length != ret.content_length) {
+    	if(ret.http_code != 200 || !http_has_content_information(ret.data)) {
 			int error = get_last_error();
 			myperror(__LINE__, "Error during receiving of https_get", error);
 		}
 	}
     https_cleanup(ctx, bio);
-    if(http_is_response_ok(http_response)) {
-    	http_response = http_remove_header(http_response);
-    } else {
-        free(http_response);
-        http_response = NULL;
+    if(http_is_response_ok(ret.data)) {
+    	ret.data = http_remove_header(ret.data);
     }
-    return http_response;
+    return ret;
 }
 
-char* https_get_with_useragent(char const*const host, char const*const file, char const*const user_agent, char const*const add_info)
+struct HttpData https_get_with_useragent(char const*const host, char const*const file, char const*const user_agent, char const*const add_info)
 {
-    char* ret = 0;
+	struct HttpData ret = {0};
     size_t buffer_length = 150;
     if(user_agent) {
 		char* http_useragent = socket_get_useragent(user_agent);
