@@ -54,7 +54,7 @@ bool socket_check_connection();
  * \param host char const*const host to be connected
  * \param file char const*const file to be requested
  * \param add_info char const*const Additional informations to be placed into the http request header. If no additional info shall be placed into header, set 0
- * \return char*
+ * \return struct HttpData
  *
  */
 struct HttpData https_get(char const*const host, char const*const file, char const*const add_info);
@@ -67,7 +67,7 @@ struct HttpData https_get(char const*const host, char const*const file, char con
  * \param file char const*const file to be requested
  * \param user_agent char const*const string containing application name, the string is internally processed to be http conforming 
  * \param add_info char const*const Additional informations to be placed into the http request header. If no additional info shall be placed into header, set 0
- * \return char*
+ * \return struct HttpData
  *
  */
 struct HttpData https_get_with_useragent(char const*const host, char const*const file, char const*const user_agent, char const*const add_info);

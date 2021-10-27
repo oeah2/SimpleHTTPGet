@@ -91,6 +91,11 @@ static int socket_deinit(void)
 #endif
 }
 
+/** \brief Return last system error
+ *
+ * \return int last system error
+ *
+ */
 static int get_last_error(void) {
 	int ret = 0;
 #ifdef _WIN32
@@ -392,6 +397,13 @@ static char* http_remove_header(char* http_response)
     return http_response;
 }
 
+/** \brief Get error message from http header
+ *
+ * \param http_code int HTTP response code
+ * \param http_response char* response of remote computer
+ * \return char* containing error message
+ *
+ */
 static char* http_get_error_msg(int http_code, char* http_response) {
 	char* ret = 0;
 	switch(http_code) {
@@ -423,6 +435,13 @@ static char* http_get_error_msg(int http_code, char* http_response) {
 	return ret;
 }
 
+/** \brief Parse http header into struct HttpData
+ *
+ * \param data char* response of remote computer
+ * \param received_bytes total number of received bytes
+ * \return struct HttpData
+ *
+ */
 struct HttpData http_parse_header(char const*const data, size_t received_bytes) {
 	struct HttpData ret = {0};
 	if(data && received_bytes) {
@@ -680,7 +699,7 @@ static BIO* https_connect(const char* hostname, SSL_CTX** ctx_in)
 /** \brief Receives https reponse from bio
  *
  * \param bio BIO*
- * \return char*
+ * \return struct HttpData
  *
  */
 static struct HttpData https_receive(BIO* bio)
