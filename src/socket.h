@@ -80,4 +80,15 @@ struct HttpData https_get(char const*const host, char const*const file, char con
  */
 struct HttpData https_get_with_useragent(char const*const host, char const*const file, char const*const user_agent, char const*const add_info);
 
+/** \brief Based on the value of @p command, an HTTP or HTTPS request is made in a parallel thread. When finished, @p callback_func is called.
+ *
+ * \param command enum HttpCommand Determines whether an HTTP, HTTPS or HTTPS with user agent request is made
+ * \param host char const*const host to be connected
+ * \param file char const*const file to be requested
+ * \param user_agent char const*const string containing application name, the string is internally processed to be http conforming
+ * \param add_info char const*const Additional informations to be placed into the http request header. If no additional info shall be placed into header, set 0
+ * \param callback_func HttpCallback Callback function to be called when the data is fully fetched or the connection timed out
+ * \return int thread ID
+ *
+ */
 int http_get_with_thread(enum HttpCommand command, char const*const host, char const*const file, char const*const user_agent, char const*const add_info, HttpCallback callback_func);
