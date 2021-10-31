@@ -28,6 +28,14 @@ struct HttpData {
 	char* data;
 };
 
+enum HttpCommand {
+	HttpCommand_GetHttp,
+	HttpCommand_GetHttps,
+	HttpCommand_GetHttpsUserAgent,
+};
+
+typedef void HttpCallback(int threadID, struct HttpData);
+
 /** \brief A very simple http request is being made and the result returned. The returned string needs to be freed by the user
  * \details This function initializes the socket interface, connects to @p host, requests @p file and adds @p add_info into the request header.
     The returned message is being checked for validity. If valid, the http header is removed and the http body returned.
@@ -71,3 +79,5 @@ struct HttpData https_get(char const*const host, char const*const file, char con
  *
  */
 struct HttpData https_get_with_useragent(char const*const host, char const*const file, char const*const user_agent, char const*const add_info);
+
+int http_get_with_thread(enum HttpCommand command, char const*const host, char const*const file, char const*const user_agent, char const*const add_info, HttpCallback callback_func);
