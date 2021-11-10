@@ -36,8 +36,12 @@ void get_and_print(char const*const host, char const*const file, char const*cons
 					http_response.content_length, 
 					response_length, 
 					http_response.received_bytes);
-	if(http_response.http_code != 200 && http_response.data)
-		printf("Response Data: %s\n", http_response.data);
+	if(http_response.http_code != 200 && http_response.data) {
+		if(strlen(http_response.data) < 60)
+			printf("Response Data: %s\n", http_response.data);
+		else
+			puts("Response data too long, not printing.");
+	}
 	printf("\n");
 	fflush(stdout);
 	

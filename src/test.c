@@ -27,7 +27,6 @@ int main(void) {
 	size_t resp_len = 0;
 	char* http_response = NULL;
 	
-	/*
 	http_response = http_get(host, file, add_info).data;
 	assert(http_response);
 	resp_len = strlen(http_response);
@@ -43,7 +42,7 @@ int main(void) {
 		resp_len = 0;
 	printf("HTTP Response length: %zu\n", resp_len);
 	if(http_response) free(http_response);
-	*/
+	
 	struct HttpData data = https_get("www.gogle.com", "/", 0);
 	assert(data.data);
 	if(*data.data)
