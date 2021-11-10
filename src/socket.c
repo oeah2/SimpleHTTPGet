@@ -53,7 +53,7 @@ static void myperror(size_t line, char const*const msg, int error) {
 		size_t buff_len = strlen(error_msg) + strlen(msg) + 50;
 		char buffer[buff_len];
 		
-		sprintf(buffer, "%s\t errno: %d, line: %zu: %s\n", error_msg, errno, line, msg);
+		sprintf(buffer, "%s\t errno: %d, File: %s,  line: %zu: %s\n", error_msg, errno, __FILE__, line, msg);
 		perror(buffer);
 	}
 }
@@ -429,7 +429,9 @@ static char* http_get_error_msg(int http_code, char* http_response) {
 		}
 		break;
 	default:
-		// Nothing;
+		// Nothing
+		ret = http_response;
+		break;
 	}
 
 	return ret;
@@ -510,7 +512,6 @@ static struct HttpData http_receiveall(int sock_id, char* msg, size_t max_len, i
 		}			
     } while(true);
 
-END:
 	ret = http_parse_header(msg, buff_pos);
 
     return ret;

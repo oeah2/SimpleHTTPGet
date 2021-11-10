@@ -39,6 +39,7 @@ void get_and_print(char const*const host, char const*const file, char const*cons
 	if(http_response.http_code != 200 && http_response.data)
 		printf("Response Data: %s\n", http_response.data);
 	printf("\n");
+	fflush(stdout);
 	
 	if(http_response.data) free(http_response.data);
 }

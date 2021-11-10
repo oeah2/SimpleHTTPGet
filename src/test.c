@@ -24,10 +24,13 @@ int main(void) {
 	char const* host = "www.columbia.edu";
 	char const* file = "/~fdc/sample.html";
 	char const* add_info = 0;
+	size_t resp_len = 0;
+	char* http_response = NULL;
 	
-	char* http_response = http_get(host, file, add_info).data;
+	/*
+	http_response = http_get(host, file, add_info).data;
 	assert(http_response);
-	size_t resp_len = strlen(http_response);
+	resp_len = strlen(http_response);
 	printf("HTTP Response length: %zu\n",  resp_len);
 	fflush(stdout);
 	free(http_response);
@@ -40,8 +43,8 @@ int main(void) {
 		resp_len = 0;
 	printf("HTTP Response length: %zu\n", resp_len);
 	if(http_response) free(http_response);
-	
-	struct HttpData data = https_get("www.google.com", "/", 0);
+	*/
+	struct HttpData data = https_get("www.gogle.com", "/", 0);
 	assert(data.data);
 	if(*data.data)
 		resp_len = strlen(data.data);
