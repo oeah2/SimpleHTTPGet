@@ -41,10 +41,10 @@ int main(void) {
 	printf("HTTP Response length: %zu\n", resp_len);
 	if(http_response) free(http_response);
 	
-	http_response = https_get("www.google.com", "/", 0);
-	assert(http_response);
-	if(*http_response)
-		resp_len = strlen(http_response);
+	struct HttpData data = https_get("www.google.com", "/", 0);
+	assert(data.data);
+	if(*data.data)
+		resp_len = strlen(data.data);
 	else
 		resp_len = 0;
 	printf("HTTPS Response length: %zu\n", resp_len);

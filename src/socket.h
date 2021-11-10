@@ -28,6 +28,14 @@ struct HttpData {
 	char* data;
 };
 
+enum HttpCommand {
+	HttpCommand_GetHttp,
+	HttpCommand_GetHttps,
+	HttpCommand_GetHttpsUserAgent,
+};
+
+typedef void HttpCallback(int threadID, struct HttpData);
+
 /** \brief A very simple http request is being made and the result returned. The returned string needs to be freed by the user
  * \details This function initializes the socket interface, connects to @p host, requests @p file and adds @p add_info into the request header.
     The returned message is being checked for validity. If valid, the http header is removed and the http body returned.
@@ -54,10 +62,10 @@ bool socket_check_connection();
  * \param host char const*const host to be connected
  * \param file char const*const file to be requested
  * \param add_info char const*const Additional informations to be placed into the http request header. If no additional info shall be placed into header, set 0
- * \return char*
+ * \return struct HttpData
  *
  */
-char* https_get(char const*const host, char const*const file, char const*const add_info);
+struct HttpData https_get(char const*const host, char const*const file, char const*const add_info);
 
 /** \brief A very simple http request is being made and the result returned. The returned string needs to be freed by the user. This function additionally transmits the user agent.
  * \details This function initializes the socket interface, connects to @p host, requests @p file and adds @p add_info into the request header.
@@ -67,7 +75,20 @@ char* https_get(char const*const host, char const*const file, char const*const a
  * \param file char const*const file to be requested
  * \param user_agent char const*const string containing application name, the string is internally processed to be http conforming 
  * \param add_info char const*const Additional informations to be placed into the http request header. If no additional info shall be placed into header, set 0
- * \return char*
+ * \return struct HttpData
  *
  */
-char* https_get_with_useragent(char const*const host, char const*const file, char const*const user_agent, char const*const add_info);
+struct HttpData https_get_with_useragent(char const*const host, char const*const file, char const*const user_agent, char const*const add_info);
+
+/** \brief Based on the value of @p command, an HTTP or HTTPS request is made in a parallel thread. When finished, @p callback_func is called.
+ *
+ * \param command enum HttpCommand Determines whether an HTTP, HTTPS or HTTPS with user agent request is made
+ * \param host char const*const host to be connected
+ * \param file char const*const file to be requested
+ * \param user_agent char const*const string containing application name, the string is internally processed to be http conforming
+ * \param add_info char const*const Additional informations to be placed into the http request header. If no additional info shall be placed into header, set 0
+ * \param callback_func HttpCallback Callback function to be called when the data is fully fetched or the connection timed out
+ * \return int thread ID
+ *
+ */
+int http_get_with_thread(enum HttpCommand command, char const*const host, char const*const file, char const*const user_agent, char const*const add_info, HttpCallback callback_func);

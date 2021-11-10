@@ -46,8 +46,13 @@ void get_and_print(char const*const host, char const*const file, char const*cons
 int main(void) {
 	puts("Start of SimpleHTTPGet Test: \n");
 	
+	// HTTP Test
 	get_and_print("www.columbia.edu", "/~fdc/sample.html", 0, http_get);
 	get_and_print("www.gogle.com", "/", 0, http_get);
+
+	// HTTPS Test
+	get_and_print("www.google.com", "/", 0, https_get);
+	get_and_print("www.gogle.com", "/", 0, https_get);
 
 	return 0;
 }
