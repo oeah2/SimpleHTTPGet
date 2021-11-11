@@ -29,7 +29,7 @@ TestReleaseLinux: $(OUT_RELEASE_LINUX)
 	gcc $(CFLAGS_RELEASE) -o ./bin/Release/Main $(SRC_PATH)/main.c -Lbin/static -l:libSimpleHTTPGet.a -lssl -lcrypto
 	 
 Debug:
-	gcc $(CFLAGS_DEBUG) -o $(OUT_DEBUG) $(SRC_PATH)/test.c -lws2_32 -lssl -lcrypto
+	gcc $(CFLAGS_DEBUG) -o $(OUT_DEBUG) $(SRC_PATH)/test.c -lws2_32 -lssl -lcrypto -lpthread -latomic
 
 DebugLinux: 
 	gcc $(CFLAGS_DEBUG) -o $(OUT_DEBUG_LINUX) $(SRC_PATH)/test.c -lssl -lcrypto -static-libasan
