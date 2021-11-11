@@ -28,9 +28,7 @@
 
 typedef struct HttpData HttpFunc(char const*const host, char const*const file, char const*const additional_info);
 
-void get_and_print(char const*const host, char const*const file, char const*const additional_info, HttpFunc func) {
-	struct HttpData http_response = func(host, file, additional_info);
-	size_t response_length = strlen(http_response.data);
+void print_http_response(char const*const host, struct HttpData http_response, size_t response_length) {
 	printf("Host: %s\nHTTP Response Code: %d\nData length according to header: %zu\nReceived data bytes: %zu\nTotal Received bytes: %zu\n",
 					host,
 					http_response.http_code, 
@@ -45,9 +43,21 @@ void get_and_print(char const*const host, char const*const file, char const*cons
 	}
 	printf("\n");
 	fflush(stdout);
-	
+}
+
+void get_and_print(char const*const host, char const*const file, char const*const additional_info, HttpFunc func) {
+	struct HttpData http_response = func(host, file, additional_info);
+	size_t response_length = strlen(http_response.data);
+		
+	print_http_response(host, http_response, response_length);
+
 	if(http_response.data) free(http_response.data);
 }
+
+void Callback(pthread_t threadID, struct HttpData response) {
+	puts("Callback function called.");
+	print_http_response("", response, 0);
+}	
 
 int main(void) {
 	puts("Start of SimpleHTTPGet Test: \n");
@@ -59,6 +69,22 @@ int main(void) {
 	// HTTPS Test
 	get_and_print("www.google.com", "/", 0, https_get);
 	get_and_print("www.gogle.com", "/", 0, https_get);
+	
+	/** Threads test */
+	
+	// HTTP Test
+	http_get_with_thread(HttpCommand_GetHttp, "www.columbia.edu", "/~fdc/sample.html", 0, 0, 0, Callback);
+	sleep(2);
+	http_get_with_thread(HttpCommand_GetHttp, "www.gogle.com", "/", 0, 0, 0, Callback);
+	sleep(2);
+		
+	// HTTPS Test
+	http_get_with_thread(HttpCommand_GetHttps, "www.google.com", "/~fdc/sample.html", 0, 0, 0, Callback);
+	sleep(2);
+	http_get_with_thread(HttpCommand_GetHttps, "www.gogle.com", "/", 0, 0, 0, Callback);
+	sleep(2);
+	
+	sleep(2);
 
 	return 0;
 }

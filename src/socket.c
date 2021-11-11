@@ -40,6 +40,7 @@
 #include <openssl/ssl.h>
 #include "socket.h"
 
+#define MAX_THREADS 5
 
 enum {
     SOCK_OK,
@@ -789,11 +790,12 @@ struct HttpData https_get_with_useragent(char const*const host, char const*const
     return ret;
 }
 
-static socket_thread_data data;
+static _Atomic(size_t) active_threads = 0;
+static _Atomic(socket_thread_data) threadData;
 
 static void* thread_wrapper(void* thread_arg) {
 	assert(thread_arg);
-	socket_thread_data copy = *(socket_thread_data*)thread_arg;
+	socket_thread_data copy = *(_Atomic(socket_thread_data)*)thread_arg;
 	
 	struct HttpData retData = {0};
 	if(copy.command == HttpCommand_GetHttp) {
@@ -808,16 +810,18 @@ static void* thread_wrapper(void* thread_arg) {
 	
 	pthread_t thread_id = pthread_self();
 	copy.callback_func(thread_id, retData);
+	assert(active_threads > 0);
+	active_threads--;
 	
 	return NULL;
 }
 
 pthread_t http_get_with_thread(enum HttpCommand command, char const*const host, char const*const file, char const*const user_agent, char const*const add_info, int timeout_ms, HttpCallback* callback_func)
-{
-	data = (socket_thread_data){0};
+{	
+	threadData = (socket_thread_data){0};
 	pthread_t retID = -1;
 	if(host && file && callback_func) {
-		data = (socket_thread_data) {
+		threadData = (socket_thread_data) {
 			.command = command,
 			.host = host,
 			.file = file,
@@ -831,8 +835,11 @@ pthread_t http_get_with_thread(enum HttpCommand command, char const*const host, 
 		s = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 		if (s != 0) return retID;
 		
-		if(0 != pthread_create(&retID, &attr, thread_wrapper, &data))
+		while(active_threads > MAX_THREADS);
+		if(pthread_create(&retID, &attr, thread_wrapper, &threadData) != 0)
 			return 0;
+		
+		active_threads++;
 	}
 	return retID;
 }
