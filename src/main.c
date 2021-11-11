@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <pthread.h>
 #include "socket.h"
 
 /* This code demonstrates how to use this library */

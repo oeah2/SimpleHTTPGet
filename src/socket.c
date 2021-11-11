@@ -831,7 +831,7 @@ pthread_t http_get_with_thread(enum HttpCommand command, char const*const host, 
 		s = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 		if (s != 0) return retID;
 		
-		if(0 != pthread_create(&retID, NULL, thread_wrapper, &data))
+		if(0 != pthread_create(&retID, &attr, thread_wrapper, &data))
 			return 0;
 	}
 	return retID;

@@ -19,7 +19,7 @@
 
 #include "socket.c"
 
-static struct HttpData dataTest;
+static _Atomic(struct HttpData) dataTest;
 static _Atomic(bool) finished;
 
 void Callback(pthread_t threadID, struct HttpData data_local) {
@@ -31,12 +31,11 @@ int main(void) {
 	puts("\n\nStart of SimpleHTTPGet Test: \n\n");
 	finished = false;
 	http_get_with_thread(HttpCommand_GetHttps, "www.google.com", "/", 0, 0, 0, Callback);
-	sleep(2);
-	if(finished) {
-		printf("Http Code: %d\n", dataTest.http_code);
-	}	
+	while(!finished);
+	struct HttpData dataLocal = dataTest;
+	printf("Http Code: %d\n", dataLocal.http_code);
 	fflush(stdout);
-	return;
+	return 0;
 	
 	char const* host = "www.columbia.edu";
 	char const* file = "/~fdc/sample.html";
