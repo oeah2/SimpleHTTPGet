@@ -23,7 +23,7 @@ ReleaseLinux: $(OBJ_RELEASE_PATH)/socket.o
 	ar rcs $(OUT_RELEASE_LINUX) $(OBJ_RELEASE_PATH)/socket.o
 
 TestRelease: $(OUT_RELEASE)
-	gcc $(CFLAGS_RELEASE) -o ./bin/Release/Main.exe $(SRC_PATH)/main.c -Lbin/static -l:libSimpleHTTPGet.a -lws2_32 -lssl -lcrypto
+	gcc $(CFLAGS_RELEASE) -o ./bin/Release/Main.exe $(SRC_PATH)/main.c -Lbin/static -l:libSimpleHTTPGet.a -lws2_32 -lssl -lcrypto -latomic -lpthread
 
 TestReleaseLinux: $(OUT_RELEASE_LINUX)
 	gcc $(CFLAGS_RELEASE) -o ./bin/Release/Main $(SRC_PATH)/main.c -Lbin/static -l:libSimpleHTTPGet.a -lssl -lcrypto
