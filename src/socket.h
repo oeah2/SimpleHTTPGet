@@ -34,7 +34,7 @@ enum HttpCommand {
 	HttpCommand_GetHttpsUserAgent,
 };
 
-typedef void HttpCallback(int threadID, struct HttpData);
+typedef void HttpCallback(pthread_t threadID, struct HttpData);
 
 /** \brief A very simple http request is being made and the result returned. The returned string needs to be freed by the user
  * \details This function initializes the socket interface, connects to @p host, requests @p file and adds @p add_info into the request header.
@@ -88,7 +88,8 @@ struct HttpData https_get_with_useragent(char const*const host, char const*const
  * \param user_agent char const*const string containing application name, the string is internally processed to be http conforming
  * \param add_info char const*const Additional informations to be placed into the http request header. If no additional info shall be placed into header, set 0
  * \param callback_func HttpCallback Callback function to be called when the data is fully fetched or the connection timed out
+ * \param timeout_ms Maximum time to wait before a timeout event happens
  * \return int thread ID
  *
  */
-int http_get_with_thread(enum HttpCommand command, char const*const host, char const*const file, char const*const user_agent, char const*const add_info, HttpCallback callback_func);
+pthread_t http_get_with_thread(enum HttpCommand command, char const*const host, char const*const file, char const*const user_agent, char const*const add_info, int timeout_ms, HttpCallback* callback_func);

@@ -22,6 +22,8 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <unistd.h>
+#include <stdatomic.h>
+#include <pthread.h>
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -43,6 +45,17 @@ enum {
     SOCK_OK,
     SOCK_ERR_INIT,
     SOCK_ERR_ADDRINFO,
+};
+
+typedef struct socket_thread_data socket_thread_data;
+
+struct socket_thread_data {
+	enum HttpCommand command;
+	char const* host;
+	char const* file;
+	char const* user_agent;
+	char const* add_info;
+	HttpCallback* callback_func;
 };
 
 #ifdef DIAGNOSTIC
@@ -774,4 +787,52 @@ struct HttpData https_get_with_useragent(char const*const host, char const*const
         ret = https_get(host, file, buffer);
     }
     return ret;
+}
+
+static socket_thread_data data;
+
+static void* thread_wrapper(void* thread_arg) {
+	assert(thread_arg);
+	socket_thread_data copy = *(socket_thread_data*)thread_arg;
+	
+	struct HttpData retData = {0};
+	if(copy.command == HttpCommand_GetHttp) {
+		retData = http_get(copy.host, copy.file, copy.add_info);
+	} else if(copy.command == HttpCommand_GetHttps) {
+		retData = https_get(copy.host, copy.file, copy.add_info);
+	} else if(copy.command == HttpCommand_GetHttpsUserAgent && copy.user_agent) {
+		retData = https_get_with_useragent(copy.host, copy.file, copy.user_agent, copy.add_info);
+	} else {
+		assert(0);
+	}
+	
+	pthread_t thread_id = pthread_self();
+	copy.callback_func(thread_id, retData);
+	
+	return NULL;
+}
+
+pthread_t http_get_with_thread(enum HttpCommand command, char const*const host, char const*const file, char const*const user_agent, char const*const add_info, int timeout_ms, HttpCallback* callback_func)
+{
+	data = (socket_thread_data){0};
+	pthread_t retID = -1;
+	if(host && file && callback_func) {
+		data = (socket_thread_data) {
+			.command = command,
+			.host = host,
+			.file = file,
+			.user_agent = user_agent,
+			.add_info = add_info,
+			.callback_func = callback_func,
+		};
+		pthread_attr_t attr;
+		int s = pthread_attr_init(&attr);
+		if(s != 0) return retID;
+		s = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+		if (s != 0) return retID;
+		
+		if(0 != pthread_create(&retID, NULL, thread_wrapper, &data))
+			return 0;
+	}
+	return retID;
 }

@@ -19,8 +19,25 @@
 
 #include "socket.c"
 
+static struct HttpData dataTest;
+static _Atomic(bool) finished;
+
+void Callback(pthread_t threadID, struct HttpData data_local) {
+	dataTest = data_local;
+	finished = true;
+}
+
 int main(void) {
 	puts("\n\nStart of SimpleHTTPGet Test: \n\n");
+	finished = false;
+	http_get_with_thread(HttpCommand_GetHttps, "www.google.com", "/", 0, 0, 0, Callback);
+	sleep(2);
+	if(finished) {
+		printf("Http Code: %d\n", dataTest.http_code);
+	}	
+	fflush(stdout);
+	return;
+	
 	char const* host = "www.columbia.edu";
 	char const* file = "/~fdc/sample.html";
 	char const* add_info = 0;
@@ -51,6 +68,7 @@ int main(void) {
 		resp_len = 0;
 	printf("HTTPS Response length: %zu\n", resp_len);
 	free(http_response);
+	
 
 	puts("\n\nEnd of SimpleHTTPGet Test!\n\n");
 	return 0;
