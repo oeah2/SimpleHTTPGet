@@ -32,7 +32,7 @@ Debug:
 	gcc $(CFLAGS_DEBUG) -o $(OUT_DEBUG) $(SRC_PATH)/test.c -lws2_32 -lssl -lcrypto -lpthread -latomic
 
 DebugLinux: 
-	gcc $(CFLAGS_DEBUG) -o $(OUT_DEBUG_LINUX) $(SRC_PATH)/test.c -lssl -lcrypto -static-libasan
+	gcc $(CFLAGS_DEBUG) -o $(OUT_DEBUG_LINUX) $(SRC_PATH)/test.c -lssl -lcrypto -static-libasan -latomic
 
 $(OBJ_DEBUG_PATH)/socket.o:
 	gcc $(CFLAGS_DEBUG) -c $(SRC_PATH)/socket.c -o $(OBJ_DEBUG_PATH)/socket.o
