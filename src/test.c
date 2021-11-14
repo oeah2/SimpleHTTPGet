@@ -19,8 +19,9 @@
 
 #include "socket.c"
 
-static _Atomic(struct HttpData)
-dataTest;
+#warning "This file is outdated, instead refer to main.c"
+
+static _Atomic(struct HttpData) dataTest;
 static _Atomic(bool) finished;
 
 void Callback(pthread_t threadID, struct HttpData data_local) {

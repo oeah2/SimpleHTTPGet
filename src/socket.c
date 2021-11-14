@@ -296,7 +296,7 @@ static size_t http_find_header_length(char const *const http_response) {
 	size_t ret = 0;
 	if (http_response) {
 		char *pos_header_end = strstr(http_response, "\r\n\r\n")
-				+ strlen("\r\n\r\n");   // find end of header, -1 necessary?
+				+ strlen("\r\n\r\n");   // find end of header
 		if (pos_header_end) {
 			ptrdiff_t length = pos_header_end - http_response;
 			ret = length;
@@ -354,8 +354,7 @@ static bool http_is_response_complete(char const *const http_response) {
  * \return char* string containing http 1.1 request
  *
  */
-static char* http_create_request(char const *const host, char const *const file,
-		char const *const add_info) {
+static char* http_create_request(char const *const host, char const *const file, char const *const add_info) {
 	char *request = 0;
 	if (host && file) {
 		size_t const header_max = 2000;
@@ -451,8 +450,7 @@ struct HttpData http_parse_header(char const *const data, size_t received_bytes)
 	if (data && received_bytes) {
 		ret.http_code = http_get_http_code(data);
 		ret.received_bytes = received_bytes;
-		ret.received_data_length = received_bytes
-				- http_find_header_length(data);
+		ret.received_data_length = received_bytes - http_find_header_length(data);
 		ret.content_length = http_find_content_length(data);
 	}
 	return ret;
@@ -467,16 +465,14 @@ struct HttpData http_parse_header(char const *const data, size_t received_bytes)
  * \return int
  *
  */
-static struct HttpData http_receiveall(int sock_id, char *msg, size_t max_len,
-		int flags) {
+static struct HttpData http_receiveall(int sock_id, char *msg, size_t max_len, int flags) {
 	struct HttpData ret = { 0 };
 	int received = 0;
 	int buff_pos = 0;
 	int err_ret = 0;
 
 	do {
-		received = socket_receive(sock_id, msg + buff_pos, max_len - buff_pos,
-				flags);
+		received = socket_receive(sock_id, msg + buff_pos, max_len - buff_pos, flags);
 		if (received == -1) {
 			err_ret = get_last_error();
 #ifdef _WIN32
@@ -518,11 +514,12 @@ static struct HttpData http_receiveall(int sock_id, char *msg, size_t max_len,
 		}
 	} while (true);
 
-	END: ret = http_parse_header(msg, buff_pos);
+END:
+	ret = http_parse_header(msg, buff_pos);
 
 	return ret;
 
-	ERR_RECV:
+ERR_RECV:
 #ifdef _WIN32
     if(!ret.http_code) ret.http_code = err_ret;
 #else
@@ -544,8 +541,7 @@ static struct HttpData http_receiveall(int sock_id, char *msg, size_t max_len,
  * \return char* server response, http header removed. 0 if no valid response
  *
  */
-struct HttpData http_get(char const *const host, char const *const file,
-		char const *const add_info) {
+struct HttpData http_get(char const *const host, char const *const file, char const *const add_info) {
 	struct HttpData ret = { 0 };
 	int s = 0;
 	char *http_request = 0, *buffer = 0;
@@ -559,21 +555,26 @@ struct HttpData http_get(char const *const host, char const *const file,
 		http_request = http_create_request(host, file, add_info);
 		if (!http_request)
 			goto ERR_SOCKET;
+
 		if (!socket_sendall(s, http_request, strlen(http_request) + 1))
 			goto ERR_SEND;
+
 		size_t buf_len = 100E3;
 		buffer = calloc(buf_len, sizeof(char));
 		if (!buffer)
 			goto ERR_SEND;
+
 		size_t received_bytes = 0;
 		if (!socket_set_blocking(s, false)) {
 			int error = get_last_error();
 			myperror(__LINE__, "Error setting socket to nonblocking", error);
 			return ret;
 		}
+
 		ret = http_receiveall(s, buffer + received_bytes, buf_len, 0);
 		if (!ret.received_bytes)
 			goto ERR_RECV;
+
 		if (ret.http_code == 200) {
 			if (!http_has_content_information(buffer)
 					|| http_is_response_complete(buffer)) {
@@ -595,7 +596,8 @@ struct HttpData http_get(char const *const host, char const *const file,
 	}
 	return ret;
 
-	ERR_RECV: (void) ret;
+ERR_RECV:
+	(void) ret;
 	int error = get_last_error();
 	myperror(__LINE__, "Error during receive", error);
 	free(ret.data);
@@ -728,8 +730,7 @@ static struct HttpData https_receive(BIO *bio) {
 	return ret;
 }
 
-struct HttpData https_get(char const *const host, char const *const file,
-		char const *const add_info) {
+struct HttpData https_get(char const *const host, char const *const file, char const *const add_info) {
 	struct HttpData ret = { 0 };
 	https_init();
 	SSL_CTX *ctx = NULL;
@@ -791,8 +792,7 @@ static _Atomic(socket_thread_data) threadData;
 
 static void* thread_wrapper(void *thread_arg) {
 	assert(thread_arg);
-	socket_thread_data
-	copy = *(_Atomic(socket_thread_data)*)thread_arg;
+	socket_thread_data copy = *(_Atomic(socket_thread_data)*)thread_arg;
 
 	struct HttpData retData = { 0 };
 	if (copy.command == HttpCommand_GetHttp) {
