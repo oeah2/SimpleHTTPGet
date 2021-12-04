@@ -89,9 +89,6 @@ int main(void) {
 	sleep(2);
 	http_get_with_thread(HttpCommand_GetHttps, "www.gogle.com", "/", 0, 0, 0,
 			Callback);
-	sleep(2);
-
-	sleep(2);
 
 	return 0;
 }
