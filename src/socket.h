@@ -20,19 +20,22 @@
 #include <stdbool.h>
 #include <errno.h>
 
+/** \brief Data is handled between this library and the caller through this struct */
 struct HttpData {
-	int http_code;
-	size_t received_bytes;
-	size_t received_data_length;
-	size_t content_length;
+	int http_code; /**< @brief HTTP Response code of the requested server */
+	size_t received_bytes; /**< @brief The total number of received bytes, including HTTP header */
+	size_t received_data_length; /**< @brief The total number of received data bytes, excluding HTTP header */
+	size_t content_length; /**< @brief The content length of the HTTP response, according to the HTTP header sent by the server */
 	char *data;
 };
 
 enum HttpCommand {
-	HttpCommand_GetHttp, HttpCommand_GetHttps, HttpCommand_GetHttpsUserAgent,
+	HttpCommand_GetHttp,
+	HttpCommand_GetHttps,
+	HttpCommand_GetHttpsUserAgent,
 };
 
-typedef void HttpCallback(pthread_t threadID, struct HttpData);
+typedef void HttpCallback(pthread_t threadID, struct HttpData); /**< @brief A Callback Function for this library shall have this form */
 
 /** \brief A very simple http request is being made and the result returned. The returned string needs to be freed by the user
  * \details This function initializes the socket interface, connects to @p host, requests @p file and adds @p add_info into the request header.
