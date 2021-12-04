@@ -431,6 +431,7 @@ static char* http_get_error_msg(int http_code, char *http_response) {
 		break;
 	default:
 		// Nothing
+#warning "Currently only HTTP Error code 301 is handled. Every other error code is not handled but rather directly forwarded to the calling context."
 		ret = http_response;
 		break;
 	}
