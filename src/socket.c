@@ -608,7 +608,7 @@ ERR_RECV:
 	return ret;
 }
 
-bool socket_check_connection() // Das ist keine schoene Loesung, sollte aber funktionieren.
+bool socket_check_connection(void) // This is not a good solution, but it should work.
 {
 	struct HttpData ret = http_get("www.google.com", "/", 0);
 	if (ret.data) {
@@ -702,7 +702,8 @@ static BIO* https_connect(const char *hostname, SSL_CTX **ctx_in) {
         fprintf(stderr,
                 "##### Certificate verification error (%i) but continuing...\n",
                 (int) verify_flag);
-
+#else
+#warning "Warning: SSL Verification is being skipped. Man in the Middle Attacks can not be discovered"
 #endif // SKIP_VERIFICATION
 
 	return bio;
