@@ -44,7 +44,9 @@
 #define MAX_THREADS 5
 
 enum {
-	SOCK_OK, SOCK_ERR_INIT, SOCK_ERR_ADDRINFO,
+	SOCK_OK,
+	SOCK_ERR_INIT,
+	SOCK_ERR_ADDRINFO,
 };
 
 typedef struct socket_thread_data socket_thread_data;
