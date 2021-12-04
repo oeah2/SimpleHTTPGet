@@ -18,7 +18,6 @@
  */
 
 #include <stdbool.h>
-#include <errno.h>
 
 /** \brief Data is handled between this library and the caller through this struct */
 struct HttpData {

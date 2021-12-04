@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include <netdb.h>
 #include <fcntl.h>
+#include <errno.h>
 #endif
 #include <openssl/bio.h>
 #include <openssl/err.h>
