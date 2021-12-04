@@ -29,10 +29,11 @@ struct HttpData {
 	char *data;
 };
 
+/** \brief This enum is used to tell the library, what method should be used to fetch data in an threaded call */
 enum HttpCommand {
-	HttpCommand_GetHttp,
-	HttpCommand_GetHttps,
-	HttpCommand_GetHttpsUserAgent,
+	HttpCommand_GetHttp, /**< @brief Request data using regular HTTP */
+	HttpCommand_GetHttps, /**< @brief Request data using encrypted HTTPS */
+	HttpCommand_GetHttpsUserAgent, /**< @brief Request Data using encrypted HTTPS and send a defined User agent identifer */
 };
 
 typedef void HttpCallback(pthread_t threadID, struct HttpData); /**< @brief A Callback Function for this library shall have this form */
