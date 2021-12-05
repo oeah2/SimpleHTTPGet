@@ -57,6 +57,7 @@ struct socket_thread_data {
 	char const *file;
 	char const *user_agent;
 	char const *add_info;
+	time_t		timeout;
 	HttpCallback *callback_func;
 };
 
@@ -77,6 +78,20 @@ static void myperror(size_t line, char const *const msg, int error) {
 	return;
 }
 #endif
+
+/** \brief Checks whether a request is timed out
+ *
+ * \return true on timeout, false otherwise
+ *
+ */
+static bool socket_istimedout(time_t timeout) {
+	bool ret = false;
+	time_t now = time(0);
+	if(timeout && now > timeout) {
+		ret = true;
+	}
+	return ret;
+}
 
 /** \brief Initialize socket
  *
@@ -466,16 +481,25 @@ struct HttpData http_parse_header(char const *const data, size_t received_bytes)
  * \param msg char* destination array
  * \param max_len size_t max length of @p msg
  * \param flags int additional flags
+ * \param timeout time_t (optional) defines when timeout shall happen
  * \return int
  *
  */
-static struct HttpData http_receiveall(int sock_id, char *msg, size_t max_len, int flags) {
+static struct HttpData http_receiveall(int sock_id, char *msg, size_t max_len, int flags, time_t timeout) {
 	struct HttpData ret = { 0 };
 	int received = 0;
 	int buff_pos = 0;
 	int err_ret = 0;
 
 	do {
+		if(socket_istimedout(timeout)) {
+#ifdef _WIN32
+			err_ret = WSAETIMEDOUT;
+#else
+			errno = ETIME;
+#endif
+			goto ERR_RECV;
+		}
 		received = socket_receive(sock_id, msg + buff_pos, max_len - buff_pos, flags);
 		if (received == -1) {
 			err_ret = get_last_error();
@@ -545,7 +569,7 @@ ERR_RECV:
  * \return char* server response, http header removed. 0 if no valid response
  *
  */
-struct HttpData http_get(char const *const host, char const *const file, char const *const add_info) {
+struct HttpData http_get(char const *const host, char const *const file, char const *const add_info, time_t timeout) {
 	struct HttpData ret = { 0 };
 	int s = 0;
 	char *http_request = 0, *buffer = 0;
@@ -575,7 +599,7 @@ struct HttpData http_get(char const *const host, char const *const file, char co
 			return ret;
 		}
 
-		ret = http_receiveall(s, buffer + received_bytes, buf_len, 0);
+		ret = http_receiveall(s, buffer + received_bytes, buf_len, 0, timeout);
 		if (!ret.received_bytes)
 			goto ERR_RECV;
 
@@ -613,7 +637,7 @@ ERR_RECV:
 
 bool socket_check_connection(void) // This is not a good solution, but it should work.
 {
-	struct HttpData ret = http_get("www.google.com", "/", 0);
+	struct HttpData ret = http_get("www.google.com", "/", 0, 0);
 	if (ret.data) {
 		free(ret.data);
 		return true;
@@ -718,11 +742,13 @@ static BIO* https_connect(const char *hostname, SSL_CTX **ctx_in) {
  * \return struct HttpData
  *
  */
-static struct HttpData https_receive(BIO *bio) {
+static struct HttpData https_receive(BIO *bio, time_t timeout) {
 	size_t resp_len = 1E6, recv_len = 0;
 	char *response = calloc(resp_len, sizeof(char));
 	/* read HTTP response from server and print to stdout */
 	while (1) {
+		if(socket_istimedout(timeout))
+			break;
 		int n = BIO_read(bio, response + recv_len, resp_len - recv_len);
 		if (n <= 0)
 			break; /* 0 is end-of-stream, < 0 is an error */
@@ -735,7 +761,7 @@ static struct HttpData https_receive(BIO *bio) {
 	return ret;
 }
 
-struct HttpData https_get(char const *const host, char const *const file, char const *const add_info) {
+struct HttpData https_get(char const *const host, char const *const file, char const *const add_info, time_t timeout) {
 	struct HttpData ret = { 0 };
 	https_init();
 	SSL_CTX *ctx = NULL;
@@ -752,7 +778,7 @@ struct HttpData https_get(char const *const host, char const *const file, char c
 	free(http_request);
 	http_request = NULL;
 
-	ret = https_receive(bio);
+	ret = https_receive(bio, timeout);
 	if (ret.received_data_length != ret.content_length) {
 		if (ret.http_code != 200 || http_has_content_information(ret.data)) {
 			int error = get_last_error();
@@ -769,7 +795,7 @@ struct HttpData https_get(char const *const host, char const *const file, char c
 
 struct HttpData https_get_with_useragent(char const *const host,
 		char const *const file, char const *const user_agent,
-		char const *const add_info) {
+		char const *const add_info, time_t timeout) {
 	struct HttpData ret = { 0 };
 	size_t buffer_length = 150;
 	if (user_agent) {
@@ -787,7 +813,7 @@ struct HttpData https_get_with_useragent(char const *const host,
 		}
 		free(http_useragent);
 
-		ret = https_get(host, file, buffer);
+		ret = https_get(host, file, buffer, timeout);
 	}
 	return ret;
 }
@@ -801,13 +827,13 @@ static void* thread_wrapper(void *thread_arg) {
 
 	struct HttpData retData = { 0 };
 	if (copy.command == HttpCommand_GetHttp) {
-		retData = http_get(copy.host, copy.file, copy.add_info);
+		retData = http_get(copy.host, copy.file, copy.add_info, copy.timeout);
 	} else if (copy.command == HttpCommand_GetHttps) {
-		retData = https_get(copy.host, copy.file, copy.add_info);
+		retData = https_get(copy.host, copy.file, copy.add_info, copy.timeout);
 	} else if (copy.command == HttpCommand_GetHttpsUserAgent
 			&& copy.user_agent) {
 		retData = https_get_with_useragent(copy.host, copy.file,
-				copy.user_agent, copy.add_info);
+				copy.user_agent, copy.add_info, copy.timeout);
 	} else {
 		assert(0);
 	}
@@ -822,13 +848,14 @@ static void* thread_wrapper(void *thread_arg) {
 
 pthread_t http_get_with_thread(enum HttpCommand command, char const *const host,
 		char const *const file, char const *const user_agent,
-		char const *const add_info, int timeout_ms, HttpCallback *callback_func) {
+		char const *const add_info, time_t timeout, HttpCallback *callback_func) {
 	threadData = (socket_thread_data ) { 0 };
 	pthread_t retID = -1;
-	if (host && file && callback_func) {
+	if (host && file && callback_func && !socket_istimedout(timeout)) {
 		threadData = (socket_thread_data ) { .command = command, .host = host,
 						.file = file, .user_agent = user_agent, .add_info =
-								add_info, .callback_func = callback_func, };
+								add_info, .timeout = timeout,
+								.callback_func = callback_func, };
 		pthread_attr_t attr;
 		int s = pthread_attr_init(&attr);
 		if (s != 0)

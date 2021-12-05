@@ -30,14 +30,16 @@ void Callback(pthread_t threadID, struct HttpData data_local) {
 }
 
 int main(void) {
+	time_t timeout = 0;
+
 	puts("\n\nStart of SimpleHTTPGet Test: \n\n");
 	finished = false;
-	http_get_with_thread(HttpCommand_GetHttps, "www.google.com", "/", 0, 0, 0,
+	pthread_t id = http_get_with_thread(HttpCommand_GetHttps, "www.google.com", "/", 0, 0, timeout,
 			Callback);
-	while (!finished)
+	while (id != -1 && !finished)
 		;
 	struct HttpData dataLocal = dataTest;
-	printf("Http Code: %d\n", dataLocal.http_code);
+	printf("Http CoderetID: %d\n", dataLocal.http_code);
 	fflush(stdout);
 	return 0;
 
@@ -47,14 +49,14 @@ int main(void) {
 	size_t resp_len = 0;
 	char *http_response = NULL;
 
-	http_response = http_get(host, file, add_info).data;
+	http_response = http_get(host, file, add_info, timeout).data;
 	assert(http_response);
 	resp_len = strlen(http_response);
 	printf("HTTP Response length: %zu\n", resp_len);
 	fflush(stdout);
 	free(http_response);
 
-	http_response = http_get("www.gogle.com", "/", 0).data;
+	http_response = http_get("www.gogle.com", "/", 0, timeout).data;
 	assert(http_response);
 	if (*http_response)
 		resp_len = strlen(http_response);
@@ -64,7 +66,7 @@ int main(void) {
 	if (http_response)
 		free(http_response);
 
-	struct HttpData data = https_get("www.gogle.com", "/", 0);
+	struct HttpData data = https_get("www.gogle.com", "/", 0, timeout);
 	assert(data.data);
 	if (*data.data)
 		resp_len = strlen(data.data);

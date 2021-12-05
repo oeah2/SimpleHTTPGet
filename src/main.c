@@ -28,7 +28,7 @@
 /* This code demonstrates how to use this library */
 
 typedef struct HttpData HttpFunc(char const *const host, char const *const file,
-		char const *const additional_info);
+		char const *const additional_info, time_t timeout);
 
 void print_http_response(char const *const host, struct HttpData http_response,
 		size_t response_length) {
@@ -48,7 +48,7 @@ void print_http_response(char const *const host, struct HttpData http_response,
 
 void get_and_print(char const *const host, char const *const file,
 		char const *const additional_info, HttpFunc func) {
-	struct HttpData http_response = func(host, file, additional_info);
+	struct HttpData http_response = func(host, file, additional_info, 0);
 	size_t response_length = strlen(http_response.data);
 
 	print_http_response(host, http_response, response_length);

@@ -44,11 +44,12 @@ typedef void HttpCallback(pthread_t threadID, struct HttpData); /**< @brief A Ca
  * \param host char const*const host to be connected
  * \param file char const*const file to be requested
  * \param add_info char const*const Additional informations to be placed into the http request header. If no additional info shall be placed into header, set 0
+ * \param timeout time_t the desired timeout moment, or 0 for no timeout
  * \return char*
  *
  */
 struct HttpData http_get(char const *const host, char const *const file,
-		char const *const add_info);
+		char const *const add_info, time_t timeout);
 
 /** \brief Checks the internet availability
  *  \details A HTTP request is sent to google and the reponse is checked for validity.
@@ -64,11 +65,12 @@ bool socket_check_connection();
  * \param host char const*const host to be connected
  * \param file char const*const file to be requested
  * \param add_info char const*const Additional informations to be placed into the http request header. If no additional info shall be placed into header, set 0
+ * \param timeout time_t the desired timeout moment, or 0 for no timeout
  * \return struct HttpData
  *
  */
 struct HttpData https_get(char const *const host, char const *const file,
-		char const *const add_info);
+		char const *const add_info, time_t timeout);
 
 /** \brief A very simple http request is being made and the result returned. The returned string needs to be freed by the user. This function additionally transmits the user agent.
  * \details This function initializes the socket interface, connects to @p host, requests @p file and adds @p add_info into the request header.
@@ -78,12 +80,13 @@ struct HttpData https_get(char const *const host, char const *const file,
  * \param file char const*const file to be requested
  * \param user_agent char const*const string containing application name, the string is internally processed to be http conforming 
  * \param add_info char const*const Additional informations to be placed into the http request header. If no additional info shall be placed into header, set 0
+ * \param timeout time_t the desired timeout moment, or 0 for no timeout
  * \return struct HttpData
  *
  */
 struct HttpData https_get_with_useragent(char const *const host,
 		char const *const file, char const *const user_agent,
-		char const *const add_info);
+		char const *const add_info, time_t timeout);
 
 /** \brief Based on the value of @p command, an HTTP or HTTPS request is made in a parallel thread. When finished, @p callback_func is called.
  *
@@ -93,11 +96,11 @@ struct HttpData https_get_with_useragent(char const *const host,
  * \param user_agent char const*const string containing application name, the string is internally processed to be http conforming
  * \param add_info char const*const Additional informations to be placed into the http request header. If no additional info shall be placed into header, set 0
  * \param callback_func HttpCallback Callback function to be called when the data is fully fetched or the connection timed out
- * \param timeout_ms Maximum time to wait before a timeout event happens
+ * \param timeout time_t the desired timeout moment, or 0 for no timeout
  * \return int thread ID
  *
  */
 pthread_t http_get_with_thread(enum HttpCommand command, char const *const host,
 		char const *const file, char const *const user_agent,
-		char const *const add_info, int timeout_ms,
+		char const *const add_info, time_t timeout,
 		HttpCallback *callback_func);
