@@ -821,9 +821,20 @@ struct HttpData https_get_with_useragent(char const *const host,
 static _Atomic(size_t) active_threads = 0;
 static _Atomic(socket_thread_data) threadData;
 
+static bool thread_data_is_empty(socket_thread_data data) {
+	return data.file == NULL
+			&& data.host == NULL;
+	// Only these two need to be checked. If these are NULL, the request would make no sense
+}
+
 static void* thread_wrapper(void *thread_arg) {
 	assert(thread_arg);
-	socket_thread_data copy = *(_Atomic(socket_thread_data)*)thread_arg;
+	_Atomic(socket_thread_data)* ptr_arg = thread_arg;
+	socket_thread_data copy = *ptr_arg;
+	*ptr_arg = (socket_thread_data) {0};
+
+	while (active_threads > MAX_THREADS)
+		; // Wait for other threads to finish
 
 	struct HttpData retData = { 0 };
 	if (copy.command == HttpCommand_GetHttp) {
@@ -852,6 +863,8 @@ pthread_t http_get_with_thread(enum HttpCommand command, char const *const host,
 	threadData = (socket_thread_data ) { 0 };
 	pthread_t retID = -1;
 	if (host && file && callback_func && !socket_istimedout(timeout)) {
+		while(!thread_data_is_empty(threadData))
+			;	// Wait for other threads to take the data and reset this struct
 		threadData = (socket_thread_data ) { .command = command, .host = host,
 						.file = file, .user_agent = user_agent, .add_info =
 								add_info, .timeout = timeout,
@@ -864,8 +877,6 @@ pthread_t http_get_with_thread(enum HttpCommand command, char const *const host,
 		if (s != 0)
 			return retID;
 
-		while (active_threads > MAX_THREADS)
-			;
 		if (pthread_create(&retID, &attr, thread_wrapper, &threadData) != 0)
 			return 0;
 

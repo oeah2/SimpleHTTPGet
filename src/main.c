@@ -64,7 +64,7 @@ void Callback(pthread_t threadID, struct HttpData response) {
 
 int main(void) {
 	puts("Start of SimpleHTTPGet Test: \n");
-
+/*
 	// HTTP Test
 	get_and_print("www.columbia.edu", "/~fdc/sample.html", 0, http_get);
 	get_and_print("www.gogle.com", "/", 0, http_get);
@@ -72,9 +72,9 @@ int main(void) {
 	// HTTPS Test
 	get_and_print("www.google.com", "/", 0, https_get);
 	get_and_print("www.gogle.com", "/", 0, https_get);
-
+*/
 	/** Threads test */
-
+	puts("Now Testing with threads");
 	// HTTP Test
 	http_get_with_thread(HttpCommand_GetHttp, "www.columbia.edu",
 			"/~fdc/sample.html", 0, 0, 0, Callback);
@@ -86,9 +86,13 @@ int main(void) {
 	// HTTPS Test
 	http_get_with_thread(HttpCommand_GetHttps, "www.google.com",
 			"/~fdc/sample.html", 0, 0, 0, Callback);
-	sleep(2);
+
 	http_get_with_thread(HttpCommand_GetHttps, "www.gogle.com", "/", 0, 0, 0,
 			Callback);
+
+	sleep(5);
+	puts("Waittime finished");
+	fflush(stdout);
 
 	return 0;
 }

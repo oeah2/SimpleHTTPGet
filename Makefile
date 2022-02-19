@@ -54,6 +54,9 @@ debugLinux: $(OUT_DEBUG_LINUX)
 	
 valgrind: $(OUT_DEBUG_LINUX)
 	valgrind $(OUT_DEBUG_LINUX)
+	
+valgrind_testrelease: ./bin/Release/Main
+	valgrind --leak-check=full  --show-leak-kinds=all --leak-resolution=high --track-origins=yes ./bin/Release/Main
 
 valgrind_leakcheck: $(OUT_DEBUG_LINUX)
 	valgrind --leak-check=full $(OUT_DEBUG_LINUX)
