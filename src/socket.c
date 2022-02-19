@@ -171,7 +171,7 @@ bool socket_set_blocking(int fd, bool blocking) {
 #endif
 }
 
-struct SocketFallible {
+struct SocketFailible {
 	enum EError error;
 	int socket;
 };
@@ -182,7 +182,7 @@ struct SocketFallible {
  * \return int socket
  *
  */
-static struct SocketFallible socket_connect(char const *const addr) {
+static struct SocketFailible socket_connect(char const *const addr) {
 	struct addrinfo hints = { 0 }, *res = 0;
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;

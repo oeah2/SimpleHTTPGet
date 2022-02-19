@@ -29,7 +29,7 @@ enum EError {
 };
 
 /** \brief Data is handled between this library and the caller through this struct */
-struct HttpDataFallible {
+struct HttpDataFailible {
 	enum EError error; /**< @brief Error Code */
 	int http_code; /**< @brief HTTP Response code of the requested server */
 	size_t received_bytes; /**< @brief The total number of received bytes, including HTTP header */
