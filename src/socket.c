@@ -171,13 +171,18 @@ bool socket_set_blocking(int fd, bool blocking) {
 #endif
 }
 
+struct SocketFallible {
+	enum EError error;
+	int socket;
+};
+
 /** \brief Connect to socket
  *
  * \param addr char const*const address information
  * \return int socket
  *
  */
-static int socket_connect(char const *const addr) {
+static struct SocketFallible socket_connect(char const *const addr) {
 	struct addrinfo hints = { 0 }, *res = 0;
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
@@ -185,23 +190,23 @@ static int socket_connect(char const *const addr) {
 	if (getaddrinfo(addr, "http", &hints, &res)) {
 		int error = get_last_error();
 		myperror(__LINE__, "Error getting addrinfo.", error);
-		return -1;
+		return (struct SocketFallible) {.error = EError_AddrInfoError};
 	}
 
 	int s = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 	if (s == -1) {
 		int error = get_last_error();
 		myperror(__LINE__, "Error creating socket.", error);
-		return -1;
+		return (struct SocketFallible) {.error = EError_CreateSocketError};
 	}
 
 	if (connect(s, res->ai_addr, res->ai_addrlen) == -1) {
 		int error = get_last_error();
 		myperror(__LINE__, "Error connecting to socket.", error);
-		return -1;
+		return (struct SocketFallible) {.error = EError_ConnectionError};
 	}
 	freeaddrinfo(res);
-	return s;
+	return (struct SocketFallible) {.error = EError_NoError, .socket = s};
 }
 
 /** \brief Send data oversocket

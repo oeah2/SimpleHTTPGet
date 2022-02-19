@@ -19,8 +19,18 @@
 
 #include <stdbool.h>
 
+enum EError {
+	EError_NoError,
+	EError_AddrInfoError,
+	EError_CreateSocketError,
+	EError_ConnectionError,
+	EError_HostUnknown,
+	EError_IncompleteResponse,
+};
+
 /** \brief Data is handled between this library and the caller through this struct */
-struct HttpData {
+struct HttpDataFallible {
+	enum EError error; /**< @brief Error Code */
 	int http_code; /**< @brief HTTP Response code of the requested server */
 	size_t received_bytes; /**< @brief The total number of received bytes, including HTTP header */
 	size_t received_data_length; /**< @brief The total number of received data bytes, excluding HTTP header */
@@ -48,7 +58,7 @@ typedef void HttpCallback(pthread_t threadID, struct HttpData); /**< @brief A Ca
  * \return char*
  *
  */
-struct HttpData http_get(char const *const host, char const *const file,
+struct HttpDataFallible http_get(char const *const host, char const *const file,
 		char const *const add_info, time_t timeout);
 
 /** \brief Checks the internet availability
@@ -69,7 +79,7 @@ bool socket_check_connection();
  * \return struct HttpData
  *
  */
-struct HttpData https_get(char const *const host, char const *const file,
+struct HttpDataFallible https_get(char const *const host, char const *const file,
 		char const *const add_info, time_t timeout);
 
 /** \brief A very simple http request is being made and the result returned. The returned string needs to be freed by the user. This function additionally transmits the user agent.
@@ -84,7 +94,7 @@ struct HttpData https_get(char const *const host, char const *const file,
  * \return struct HttpData
  *
  */
-struct HttpData https_get_with_useragent(char const *const host,
+struct HttpDataFallible https_get_with_useragent(char const *const host,
 		char const *const file, char const *const user_agent,
 		char const *const add_info, time_t timeout);
 
